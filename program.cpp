@@ -64,6 +64,7 @@ static void do_drawing(cairo_t *);
 
 static void draw_pixel(cairo_t *cr, int x, int y, int size)
 {
+
   //set to white
   cairo_set_source_rgb(cr, 1, 1, 1);
 
@@ -102,6 +103,7 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data
 
 static void do_drawing(cairo_t *cr)
 {
+  
   cairo_set_source_rgb(cr, 0, 0, 0);
   cairo_paint(cr);
 
@@ -137,6 +139,8 @@ int main(int argc, char *argv[])
   gtk_widget_show_all(window);
 
   gtk_main();
+
+  
 
   return 0;
 }
