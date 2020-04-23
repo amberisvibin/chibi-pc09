@@ -3,6 +3,62 @@
 
 #include <gtk/gtk.h>
 
+int charA[8][8] = {
+  {0,0,0,0,0,0,0,0},
+  {0,1,1,1,1,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,1,1,1,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,0,0,0,0,0,0,0},
+};
+
+int charB[8][8] = {
+  {0,0,0,0,0,0,0,0},
+  {0,1,1,1,1,0,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,1,1,1,0,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,1,1,1,0,0,0},
+  {0,0,0,0,0,0,0,0},
+};
+
+int charC[8][8] = {
+  {0,0,0,0,0,0,0,0},
+  {0,0,1,1,1,1,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,0,1,1,1,1,0,0},
+  {0,0,0,0,0,0,0,0},
+};
+
+int charD[8][8] = {
+  {0,0,0,0,0,0,0,0},
+  {0,1,1,1,1,0,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,0,0,0,1,0,0},
+  {0,1,1,1,1,0,0,0},
+  {0,0,0,0,0,0,0,0},
+};
+
+int charE[8][8] = {
+  {0,0,0,0,0,0,0,0},
+  {0,1,1,1,1,1,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,1,1,1,1,0,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,1,0,0,0,0,0,0},
+  {0,1,1,1,1,1,0,0},
+  {0,0,0,0,0,0,0,0},
+};
+
+
 /* Surface to store current scribbles */
 static cairo_surface_t *surface = NULL;
 
@@ -21,8 +77,8 @@ static void clear_surface(void)
 
 /* Create a new surface of the appropriate size to store our scribbles */
 static gboolean configure_event_cb(GtkWidget         *widget,
-                    GdkEventConfigure *event,
-                    gpointer           data)
+                                   GdkEventConfigure *event,
+                                   gpointer           data)
 {
   if(surface)
   {
@@ -70,7 +126,7 @@ draw_pixel(GtkWidget *widget,
 
   cairo_set_source_rgb(cr, 1, 1, 1);
 
-  cairo_rectangle(cr, x, y, size, size);
+  cairo_rectangle(cr, x * size, y * size, size, size);
   cairo_fill(cr);
 
   cairo_destroy(cr);
@@ -79,13 +135,63 @@ draw_pixel(GtkWidget *widget,
   gtk_widget_queue_draw_area(widget, x, y, size, size);
 }
 
-
+static void
+draw_char(GtkWidget *drawing_area, int zoom, int x, int y, int chara[8][8])
+{
+  for(int i=0;i<8;i++){    
+    for(int j=0;j<8;j++){
+      int realX = j + (x * 8);
+      int realY = i + (y * 8);
+      switch (chara[i][j]) {
+        case 1:   draw_pixel(drawing_area, realX, realY, zoom);
+                  break;
+        case 0:   break;
+        default:  std::cout << "nonstandard num in array" << std::endl;
+      }
+      
+    }//end of j    
+    
+   }//end of i    
+}
 
 static void
 close_window(void)
 {
   if(surface)
     cairo_surface_destroy(surface);
+}
+
+static void
+zoom1(GtkWidget *drawing_area)
+{
+  int zoom = 1;
+  gtk_widget_set_size_request(drawing_area, 320 * zoom, 200 * zoom);
+  gtk_widget_queue_resize(drawing_area);
+}
+
+static void
+zoom2(GtkWidget *drawing_area)
+{
+  int zoom = 2;
+  gtk_widget_set_size_request(drawing_area, 320 * zoom, 200 * zoom);
+  gtk_widget_queue_resize(drawing_area);
+}
+
+static void
+zoom3(GtkWidget *drawing_area)
+{
+  int zoom = 3;
+  gtk_widget_set_size_request(drawing_area, 320 * zoom, 200 * zoom);
+  gtk_widget_queue_resize(drawing_area);
+}
+
+static void
+zoom4(GtkWidget *drawing_area)
+{
+  int zoom = 4;
+  gtk_widget_set_size_request(drawing_area, 320 * zoom, 200 * zoom);
+  gtk_widget_queue_resize(drawing_area);
+  
 }
 
 
@@ -104,6 +210,14 @@ activate(GtkApplication *app,
   GtkWidget *fileMenu;
   GtkWidget *fileMi;
   GtkWidget *quitMi;
+  GtkWidget *viewMenu;
+  GtkWidget *viewMi;
+  GtkWidget *zoomMi;
+  GtkWidget *zoomMenu;
+  GtkWidget *zoom1Mi;
+  GtkWidget *zoom2Mi;
+  GtkWidget *zoom3Mi;
+  GtkWidget *zoom4Mi;
 
 
   int zoom = 2;
@@ -112,7 +226,7 @@ activate(GtkApplication *app,
   gtk_window_set_title(GTK_WINDOW(window), "z80 screen test");
   gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 
-    g_signal_connect(window, "destroy", G_CALLBACK(close_window), NULL);
+  g_signal_connect(window, "destroy", G_CALLBACK(close_window), NULL);
 
 
   gtk_container_set_border_width(GTK_CONTAINER(window), 0);
@@ -123,17 +237,40 @@ activate(GtkApplication *app,
   
   menubar = gtk_menu_bar_new();
   fileMenu = gtk_menu_new();
+  viewMenu = gtk_menu_new();
+  zoomMenu = gtk_menu_new();
 
   fileMi = gtk_menu_item_new_with_label("File");
   quitMi = gtk_menu_item_new_with_label("Quit");
 
+  viewMi = gtk_menu_item_new_with_label("View");
+  zoomMi = gtk_menu_item_new_with_label("Zoom");
+
+  zoom1Mi = gtk_menu_item_new_with_label("100%");
+  zoom2Mi = gtk_menu_item_new_with_label("200%");
+  zoom3Mi = gtk_menu_item_new_with_label("300%");
+  zoom4Mi = gtk_menu_item_new_with_label("400%");
+
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(fileMi), fileMenu);
   gtk_menu_shell_append(GTK_MENU_SHELL(fileMenu), quitMi);
   gtk_menu_shell_append(GTK_MENU_SHELL(menubar), fileMi);
+
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(viewMi), viewMenu);
+  gtk_menu_shell_append(GTK_MENU_SHELL(viewMenu), zoomMi);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menubar), viewMi);
+
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(zoomMi), zoomMenu);
+  gtk_menu_shell_append(GTK_MENU_SHELL(zoomMenu), zoom1Mi);
+  gtk_menu_shell_append(GTK_MENU_SHELL(zoomMenu), zoom2Mi);
+  gtk_menu_shell_append(GTK_MENU_SHELL(zoomMenu), zoom3Mi);
+  gtk_menu_shell_append(GTK_MENU_SHELL(zoomMenu), zoom4Mi);
+
   gtk_box_pack_start(GTK_BOX(box), menubar, FALSE, FALSE, 0);
 
-   g_signal_connect(G_OBJECT(quitMi), "activate",
-        G_CALLBACK(gtk_widget_destroy(window)), NULL);
+  g_signal_connect_swapped (quitMi, "activate",
+                            G_CALLBACK (gtk_widget_destroy),
+                            window);
+
 
 
   drawing_area = gtk_drawing_area_new();
@@ -149,13 +286,64 @@ activate(GtkApplication *app,
                     G_CALLBACK(configure_event_cb), NULL);
 
 
+  
+  g_signal_connect_swapped (zoom1Mi, "activate",
+                            G_CALLBACK (zoom1),
+                            drawing_area);
+  g_signal_connect_swapped (zoom2Mi, "activate",
+                            G_CALLBACK (zoom2),
+                            drawing_area);
+  g_signal_connect_swapped (zoom3Mi, "activate",
+                            G_CALLBACK (zoom3),
+                            drawing_area);
+  g_signal_connect_swapped (zoom4Mi, "activate",
+                            G_CALLBACK (zoom4),
+                            drawing_area);
+
+
  
   gtk_widget_show_all(window);
 
+/*
+  draw_char(drawing_area, zoom, 0, 0,charA);
+  draw_char(drawing_area, zoom, 1, 0,charB);
+  draw_char(drawing_area, zoom, 2, 0,charC);
+  draw_char(drawing_area, zoom, 3, 0,charD);
+  draw_char(drawing_area, zoom, 4, 0,charE);
+*/
+
+  for(int i=0;i<25;i++){    
+    for(int j=0;j<40;j++){
+
+      int randNum = (rand() % 5);
+
+      switch(randNum) {
+        case 0:  draw_char(drawing_area, zoom, j, i,charA); break;
+        case 1:  draw_char(drawing_area, zoom, j, i,charB); break;
+        case 2:  draw_char(drawing_area, zoom, j, i,charC); break;
+        case 3:  draw_char(drawing_area, zoom, j, i,charD); break;
+        case 4:  draw_char(drawing_area, zoom, j, i,charE); break;
+        default: std::cout << "invalid num in rand" << std::endl; break;
+      } 
+
+      //draw_char(drawing_area, zoom, j, i,charA);
+      
+      
+    }//end of j    
+    
+   }//end of i  
+  
+
+  /*
+std::cout << "got here" << std::endl;
+   zoom = 4;
+  gtk_widget_set_size_request(drawing_area, 320 * zoom, 200 * zoom);
+  gtk_widget_queue_resize(drawing_area);
 
   draw_pixel(drawing_area, 0, 0, zoom);
-  
+  */
 }
+
 
 int
 main(int    argc,
