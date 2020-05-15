@@ -16,4 +16,4 @@ Todo:
 
 - Program ROM
 
-- Port software (customized [FUZIX](https://github.com/EtchedPixels/FUZIX)?
+- Port software (customized [FUZIX](https://github.com/EtchedPixels/FUZIX))?
