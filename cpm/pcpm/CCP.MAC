@@ -1,0 +1,1660 @@
+	title	Console Command Processor (ccp), ver 2.0
+;	assembly language version of the cp/m console command processor
+;
+;	Personal CP/M version 1.0 May 1984
+;
+;	COPYRIGHT (C) 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984
+;	Digital Research
+;	Box 579, Pacific Grove,
+;	California, 93950
+;
+false	equ	0000h
+true	equ	not false
+;
+;
+
+	cseg
+
+BASE	equ	$
+BDOSL	equ	BASE+800H
+SUBADDR	equ	BDOSL+09H
+ZEROADD	equ	BDOSL+0BH
+tran	equ	100h
+tranm	equ	$
+ccploc	equ	$
+
+
+;	********************************************************
+;	*	base of ccp contains the following code/data   *
+;	*	ccp:	jmp ccpstart	(start with command)   *
+;	*		jmp ccpclear    (start, clear command) *
+;	*	ccp+6	127		(max command length)   *
+;	*	ccp+7	comlen		(command length = 00)  *
+;	*	ccp+8	' ... '		(16 blanks)	       *
+;	********************************************************
+;	* normal entry is at ccp, where the command line given *
+;	* at ccp+8 is executed automatically (normally a null  *
+;	* command with comlen = 00).  an initializing program  *
+;	* can be automatically loaded by storing the command   *
+;	* at ccp+8, with the command length at ccp+7.  in this *
+;	* case, the ccp executes the command before prompting  *
+;	* the console for input.  note that the command is exe-*
+;	* cuted on both warm and cold starts.  when the command*
+;	* line is initialized, a jump to "jmp ccpclear" dis-   *
+;	* ables the automatic command execution.               *
+;	********************************************************
+
+	jp	ccpstart	;start ccp with possible initial command
+
+	jp	ccpclear	;clear the command buffer
+
+maxlen:	defb	127	;max buffer length
+comlen:	defb	6	;command length
+
+combuf:
+
+	defb	'VCCPLD  '	;8 character fill
+	defb	'        '	;8 character fill
+	defb	'COPYRIGHT (C) 1984, DIGITAL RESEARCH  '	; 38
+	defs	128-($-combuf)
+				;total buffer length is 128 characters
+
+comaddr:	defw	combuf	;address of next to char to scan
+staddr:		defs	2	;starting address of current fillfcb request
+
+diska	equ	0004h	;disk address for current disk
+bdos	equ	0005h	;primary bdos entry point
+buff	equ	0080h	;default buffer
+fcb	equ	005ch	;default file control block
+
+rcharf	equ	1	;read character function
+pcharf	equ	2	;print character function
+pbuff	equ	9	;print buffer function
+rbuff	equ	10	;read buffer function
+breakf	equ	11	;break key function
+liftf	equ	12	;lift head function (no operation)
+initf	equ	13	;initialize bdos function
+self	equ	14	;select disk function
+openf	equ	15	;open file function
+closef	equ	16	;close file function
+searf	equ	17	;search for file function
+searnf	equ	18	;search for next file function
+delf	equ	19	;delete file function
+dreadf	equ	20	;disk read function
+dwritf	equ	21	;disk write function
+makef	equ	22	;file make function
+renf	equ	23	;rename file function
+logf	equ	24	;return login vector
+cself	equ	25	;return currently selected drive number
+dmaf	equ	26	;set dma address
+userf	equ	32	;set user number
+
+;
+;	special fcb flags
+;
+
+rofile	equ	9	;read only file
+sysfile	equ	10	;system file flag
+
+;
+;	special characters
+;
+
+cr	equ	13	;carriage return
+lf	equ	10	;line feed
+la	equ	5fh	;left arrow
+eofile	equ	1ah	;end of file
+
+;
+;	utility procedures
+;
+
+printchar:
+
+	ld	E,A
+	ld	C,pcharf
+	jp	bdos
+
+printbc:
+;print character, but save b,c registers
+
+	push	bc
+	call	printchar
+	pop	bc
+	ret
+
+crlf:
+
+	ld	A,cr
+	call	printbc
+	ld	A,lf
+	jr	printbc
+
+blank:
+
+	ld	A,' '
+	jr	printbc
+Šprint:	
+;print string starting at b,c until next 00 entry
+
+	push	bc
+	call	crlf
+	pop	hl		;now print the string
+
+prin0:	
+
+	ld	A,(hl)
+	or	A
+	ret	z		;stop on 00
+	inc	hl
+	push	hl		;ready for next
+	call	printchar
+	pop	hl		;character printed
+	jr	prin0		;for another character
+
+initialize:
+
+	ld	C,initf
+	jp	bdos
+
+select:
+
+	ld	E,A
+	ld	C,self
+	jp	bdos
+
+openc:	
+;open comfcb
+
+	xor	A
+	ld	(comrec),a	;clear next record to read
+	ld	de,comfcb
+
+open:	
+;open the file given by d,e
+
+	ld	C,openf
+
+bdos$inr:
+
+	call	bdos
+	ld	(dcnt),a
+	inc	A
+	ret
+
+close:	
+;close the file given by d,e
+
+	ld	C,closef
+	jr	bdos$inr
+
+search:	
+;search for the file given by d,e
+
+	ld	C,searf
+	jr	bdos$inr
+
+searchn:
+;search for the next occurrence of the file given by d,e
+
+	ld	C,searnf
+	jr	bdos$inr
+
+searchcom:
+;search for comfcb file
+
+	ld	de,comfcb
+	jr	search
+
+delete:	
+;delete the file given by d,e
+	
+	ld	C,delf
+	jp	bdos
+
+bdos$cond:
+
+	call	bdos
+	or	A
+	ret
+
+diskread:
+;read the next record from the file given by d,e
+
+	ld	C,dreadf
+	jr	bdos$cond
+
+diskreadc:
+;read the comfcb file
+
+	ld	de,comfcb
+	jr	diskread
+
+diskwrite:
+;write the next record to the file given by d,e
+
+	ld	C,dwritf
+	jr	bdos$cond
+Šmake:	
+;create the file given by d,e
+
+	ld	C,makef
+	jr	bdos$inr
+
+renam:	
+;rename the file given by d,e
+
+	ld	C,renf
+	jp	bdos
+
+getuser:
+;return current user code in a
+
+	ld	E,0ffh		;drop through to setuser
+
+setuser:
+
+	ld	(USERNO),a
+	ld	C,userf
+	jp	bdos		;sets user number
+
+saveuser:
+;save user#/disk# before possible ^c or transient
+
+	call	GETUSER
+	ld	(USERNO),a
+	add	a,A
+	add	a,A
+	add	a,A
+	add	a,A		;rot left
+	ld	hl,cdisk
+	or	(hl)		;4b=user, 4b=disk
+	ld	(diska),a	;stored away in memory for later
+	ret
+
+translate:
+;translate character in register a to upper case
+
+	cp	61h
+	ret	c		;return if below lower case a
+	cp	7bh
+	ret	nc		;return if above lower case z
+	and	5fh
+	ret			;translated to upper case
+
+COPY$SUBFCB:
+
+	ld	hl,(SUBADDR)
+	inc	hl
+	ld	de,SUB$S1
+	ld	B,21
+	or	A
+	jr	nz,COPY$SF1
+	ex	de,hl
+
+COPY$SF1:
+
+	dec	B
+	ret	z
+	ld	A,(hl)
+	ld	(de),a
+	inc	hl
+	inc	de
+	jr	COPY$SF1
+
+readcom:
+;read the next command into the command buffer
+;check for submit file
+
+	ld	hl,(SUBADDR)
+	ld	A,(hl)
+	or	A
+	jr	z,NOSUB
+	inc	A
+	jr	z,OPEN$SUB
+	call	COPY$SUBFCB
+	jr	READ$SUB
+
+OPEN$SUB:
+
+	push	hl
+	ld	de,SUBFCB
+	call	OPEN
+	pop	hl
+	ld	(hl),0
+	jr	z,NOSUB
+	inc	(hl)
+
+READ$SUB:
+
+	call	SETDMABUFF
+
+;change drives to open and read the file
+
+	ld	a,(subrc)
+	dec	A		;read last record(s) first
+	ld	(subcr),a	;current record to read
+	ld	de,subfcb
+	call	diskread	;end of file if last record
+	jr	nz,nosub
+Š;disk read is ok, transfer to combuf
+
+	ld	de,comlen
+	ld	hl,buff
+	ld	B,128
+	call	move0
+
+;line is transferred, close the file with a
+;deleted record
+
+	ld	hl,SUBRC
+	dec	(hl)		; ONE LESS RECORD
+	xor	A
+	call	COPY$SUBFCB
+
+;print to the 00
+
+	ld	hl,combuf
+	call	prin0
+	call	break$key
+	jr	z,noread
+	call	del$sub
+	jp	ccp		;break key depressed
+
+nosub:	
+;no submit file
+
+	call	del$sub
+
+;translate to upper case, store zero at end
+
+	call	saveuser	;user # save in case control c
+	ld	hl,(SUBADDR)
+	dec	hl
+	ld	(hl),0FFH
+	push	hl
+	ld	C,rbuff
+	ld	de,maxlen
+	call	bdos
+	pop	hl
+	ld	(hl),0
+
+noread:	
+;enter here from submit file
+;set the last character to zero for later scans
+
+	ld	hl,comlen
+	ld	B,(hl)		;length is in b
+
+readcom0:	
+
+	inc	hl
+	ld	A,B
+	or	A		;end of scan?
+	jr	z,readcom1
+	ld	A,(hl)		;get character and translate
+	call	translate
+	ld	(hl),A
+	dec	B
+	jr	readcom0
+
+readcom1:	
+;end of scan, h,l address end of command
+
+	ld	(hl),A		;store a zero
+	ld	hl,combuf
+	ld	(comaddr),hl	;ready to scan to zero
+	ret
+
+break$key:
+;check for a character ready at the console
+
+	ld	C,breakf
+	call	bdos
+	or	A
+	ret	z
+	ld	C,rcharf
+	call	bdos		;character cleared
+	or	A
+	ret
+
+cselect:
+;get the currently selected drive number to reg-a
+
+	ld	C,cself
+	jp	bdos
+
+setdmabuff:
+;set default buffer dma address
+
+	ld	de,buff		;(drop through)
+
+setdma:
+;set dma address to d,e
+
+	ld	C,dmaf
+	jp	bdos
+
+del$sub:
+;delete the submit file, and set submit flag to false
+
+	ld	hl,(SUBADDR)
+	ld	A,(hl)
+	or	A
+	ret	z		;return if no sub file
+	ld	(hl),0		;submit flag is set to false
+	ld	de,subfcb
+	jp	delete
+
+comerr:
+;error in command string starting at position
+;'staddr' and ending with first delimiter
+
+	call	crlf		;space to next line
+	ld	hl,(staddr)	;h,l address first to print
+comerr0:	
+;print characters until blank or zero
+
+	ld	A,(hl)
+	cp	' '
+	jr	z,comerr1	; not blank
+	or	A
+	jr	z,comerr1	; not zero, so print it
+	push	hl
+	call	printchar
+	pop	hl
+	inc	hl
+	jr	comerr0		; for another character
+
+comerr1:	
+;print question mark,and delete sub file
+
+	ld	A,'?'
+	call	printchar
+	call	crlf
+	call	del$sub
+	jp	ccp	;restart with next command
+
+;
+; fcb scan and fill subroutine (entry is at fillfcb below)
+;fill the comfcb, indexed by a (0 or 16)
+;subroutines
+;
+
+delim:	
+;look for a delimiter
+
+	ld	a,(de)
+	or	A
+	ret	z	;not the last element
+	cp	' '
+	jr	c,comerr	;non graphic
+	ret	z	;treat blank as delimiter
+	cp	'='
+	ret	z
+	cp	la
+	ret	z		;left arrow
+	cp	'.'
+	ret	z
+	cp	':'
+	ret	z
+	cp	';'
+	ret	z
+	cp	'<'
+	ret	z
+	cp	'>'
+	ret	z
+	ret			;delimiter not found
+
+deblank:	
+;deblank the input line
+
+	ld	a,(de)
+	or	A
+	ret	z		;treat end of line as blank
+	cp	' '
+	ret	nz
+	inc	de
+	jr	deblank
+
+addh:	
+;add a to h,l
+
+	add	a,L
+	ld	L,A
+	ret	nc
+	inc	H
+	ret
+
+fillfcb0:
+;equivalent to fillfcb(0)
+
+	ld	A,0
+
+fillfcb:
+
+	ld	hl,comfcb
+	call	addh
+	push	hl
+	push	hl		;fcb rescanned at end
+	xor	A
+	ld	(sdisk),a	;clear selected disk (in case a:...)
+	ld	hl,(comaddr)
+	ex	de,hl		;command address in d,e
+	call	deblank		;to first non-blank character
+	ex	de,hl
+	ld	(staddr),hl	;in case of errors
+	ex	de,hl
+	pop	hl		;d,e has command, h,l has fcb address
+
+;look for preceding file name a: b: ...
+
+	ld	a,(de)
+	or	A
+	jr	z,setcur0	;use current disk if empty command
+	sbc	a,'A'-1
+	ld	B,A		;disk name held in b if : follows
+	inc	de
+	ld	a,(de)
+	cp	':'
+	jr	z,setdsk	;set disk name if :
+
+setcur:	
+;set current disk
+Š	dec	de		;back to first character of command
+
+setcur0:
+
+	ld	a,(cdisk)
+	ld	(hl),A
+	jr	setname
+
+setdsk:	
+;set disk to name in register b
+
+	ld	A,B
+	ld	(sdisk),a	;mark as disk selected
+	ld	(hl),B
+	inc	de		;past the :
+
+setname:	
+;set the file name field
+
+	ld	B,8		;file name length (max)
+
+setnam0:	
+
+	call	delim
+	jr	z,padname	;not a delimiter
+	inc	hl
+	cp	'*'
+	jr	nz,setnam1	;must be ?'s
+	ld	(hl),'?'
+	jr	setnam2		;to dec count
+
+setnam1:	
+
+	ld	(hl),A		;store character to fcb
+	inc	de
+
+setnam2:	
+
+	dec	B		;count down length
+	jr	nz,setnam0
+
+;end of name, truncate remainder
+
+trname:	
+
+	call	delim
+	jr	z,setty		;set type field if delimiter
+	inc	de
+	jr	trname
+
+padname:	
+
+	inc	hl
+	ld	(hl),' '
+	dec	B
+	jr	nz,padname
+
+setty:	
+;set the type field
+
+	ld	B,3
+	cp	'.'
+	jr	nz,padty	;skip the type field if no .
+	inc	de		;past the ., to the file type field
+
+setty0:	
+;set the field from the command buffer
+
+	call	delim
+	jr	z,padty
+	inc	hl
+	cp	'*'
+	jr	nz,setty1
+	ld	(hl),'?'	;since * specified
+	jr	setty2
+
+setty1:	
+;not a *, so copy to type field
+
+	ld	(hl),A
+	inc	de
+
+setty2:	
+;decrement count and go again
+
+	dec	B
+	jr	nz,setty0
+
+;end of type field, truncate
+
+trtyp:	
+;truncate type field
+
+	call	delim
+	jr	z,efill
+	inc	de
+	jr	trtyp
+
+padty:	
+;pad the type field with blanks
+
+	inc	hl
+	ld	(hl),' '
+	dec	B
+	jr	nz,padty
+
+efill:	
+;end of the filename/filetype fill, save command address
+;fill the remaining fields for the fcb
+
+	ld	B,3
+
+efill0:	
+
+	inc	hl
+	ld	(hl),0
+	dec	B
+	jr	nz,efill0
+	ex	de,hl
+	ld	(comaddr),hl	;set new starting point
+
+;recover the start address of the fcb and count ?'s
+
+	pop	hl
+	ld	bc,11		;b=0, c=8+3
+
+scnq:	
+
+	inc	hl
+	ld	A,(hl)
+	cp	'?'
+	jr	nz,scnq0
+
+;? found, count it in b
+
+	inc	B
+
+scnq0:	
+
+	dec	C
+	jr	nz,scnq
+
+;number of ?'s in c, move to a and return with flags set
+Š	ld	A,B
+	or	A
+	ret
+
+intvec:
+;intrinsic function names (all are four characters)
+
+	defb	'DIR '
+	defb	'ERA '
+	defb	'TYPE'
+	defb	'SAVE'
+	defb	'REN '
+	defb	'USER'
+
+intlen	equ	($-intvec)/4	;intrinsic function length
+
+
+intrinsic:
+;look for intrinsic functions (comfcb has been filled)
+
+	ld	hl,intvec
+	ld	C,0		;c counts intrinsics as scanned
+
+intrin0:	
+
+	lä	A,C
+	cp	intlen		;done with scan?
+	ret	nc
+
+;no, more to scan
+
+	ld	de,comfcb+1	;beginning of name
+	ld	B,4		;length of match is in b
+
+intrin1:	
+
+	ld	a,(de)
+	cp	(hl)		;match?
+	jr	nz,intrin2	;skip if no match
+	inc	de
+	inc	hl
+	dec	B
+	jr	nz,intrin1	;loop while matching
+
+;complete match on name, check for blank in fcb
+
+	ld	a,(de)
+	cp	' '
+	jr	nz,intrin3	;otherwise matched
+	ld	A,C
+	ret			;with intrinsic number in a
+
+intrin2:	
+;mismatch, move to end of intrinsic
+	
+	inc	hl
+	dec	B
+	jr	nz,intrin2
+
+intrin3:	
+;try next intrinsic
+	
+	inc	C		;to next intrinsic number
+	jr	intrin0		;for another round
+
+ccpclear:
+;clear the command buffer
+
+	xor	A
+	ld	(comlen),a
+
+;drop through to start ccp
+
+ccpstart:
+;enter here from boot loader
+
+	ld	sp,stack
+	push	bc		;save initial disk number
+
+;(high order 4bits=user code, low 4bits=disk#)
+
+	ld	A,C
+	rra
+	rra
+	rra
+	rra
+	and	0fh		;user code
+	ld	E,A
+	call	setuser		;user code selected
+	ld	hl,(SUBADDR)
+	dec	hl
+	ld	A,(hl)
+	ld	(hl),0
+	or	A
+	call	nz,INITIALIZE
+	pop	bc		;recall user code and disk number
+	ld	A,C
+	and	0fh		;disk number in accumulator
+	ld	(cdisk),a	;clears user code nibble
+	call	select		;proper disk is selected, now check sub files
+
+;check for initial command
+
+	ld	a,(comlen)
+	or	A
+	jr	nz,ccp0		;assume typed already
+Šccp:
+;enter here on each command or error condition
+
+	ld	sp,stack
+	call	crlf		;print d> prompt, where d is disk name
+	ld	a,(USERNO)
+	or	A
+	jr	z,CCP002
+	cp	10
+	jr	c,CCP001
+	push	af
+	ld	A,'1'
+	call	PRINTCHAR
+	pop	af
+	sub	10
+
+CCP001:
+
+	add	a,30H
+	call	PRINTCHAR
+
+CCP002:
+
+	call	cselect		;get current disk number
+	add	a,'A'
+	call	printchar
+	ld	A,'>'
+	call	printchar
+	call	readcom		;command buffer filled
+ccp0:	
+;(enter here from initialization with command full)
+
+	call	SETDMABUFF	;default dma address at buff
+	call	cselect
+	ld	(cdisk),a	;current disk number saved
+	call	fillfcb0	;command fcb filled
+	call	nz,comerr	;the name cannot be an ambiguous reference
+	ld	a,(sdisk)
+	or	A
+	jp	nz,userfunc
+
+;check for an intrinsic function
+
+	call	intrinsic
+	ld	hl,jmptab	;index is in the accumulator
+	ld	E,A
+	ld	D,0
+	add	hl,de
+	add	hl,de		;index in d,e
+	ld	A,(hl)
+	inc	hl
+	ld	H,(hl)
+	ld	L,A
+	jp	(hl)
+
+;pc changes to the proper intrinsic or user function
+
+jmptab:
+
+	defw	direct		;directory search
+	defw	erase		;file erase
+	defw	type		;type file
+	defw	save		;save memory image
+	defw	rename		;file rename
+	defw	user		;user number
+	defw	userfunc	;user-defined function
+
+;
+;utility subroutines for intrinsic handlers
+;
+
+readerr:
+;print the read error message
+
+	ld	bc,rdmsg
+	jp	print
+
+rdmsg:	defb	'READ ERROR',0 
+
+
+nofile:
+;print no file message
+
+	ld	bc,nofmsg
+	jp	print
+
+nofmsg:	defb	'NO FILE',0
+
+
+getnumber:	
+;read a number from the command line
+
+	call	fillfcb0	;should be number
+	ld	a,(sdisk)
+	or	A
+	jp	nz,comerr	;cannot be prefixed
+
+;convert the byte value in comfcb to binary
+
+	ld	hl,comfcb+1
+	ld	bc,11		;(b=0, c=11)
+
+;value accumulated in b, c counts name length to zero
+
+conv0:	
+
+	ld	A,(hl)
+	cp	' '
+	jr	z,conv1
+Š;more to scan, convert char to binary and add
+
+	inc	hl
+	sub	'0'
+	cp	10
+	jp	nc,comerr	;valid?
+	ld	D,A		;save value
+	ld	A,B		;mult by 10
+	and	11100000b
+	jp	nz,comerr
+	ld	A,B		;recover value
+	rlca
+	rlca
+	rlca			;*8
+	add	a,B
+	jp	c,comerr
+	add	a,B
+	jp	c,comerr	;*8+*2 = *10
+	add	a,D
+	jp	c,comerr	;+digit
+	ld	B,A
+	dec	C
+	jr	nz,conv0	;for another digit
+	ret
+
+conv1:	
+;end of digits, check for all blanks
+
+	ld	A,(hl)
+	cp	' '
+	jp	nz,comerr	;blanks?
+	inc	hl
+	dec	C
+	jr	nz,conv1
+	ld	A,B		;recover value
+	ret
+
+movename:
+;move 3 characters from h,l to d,e addresses
+
+	ld	B,3
+
+move0:	
+
+	ld	A,(hl)
+	ld	(de),a
+	inc	hl
+	inc	de
+	dec	B
+	jr	nz,move0
+	ret
+
+addhcf:	
+;buff + a + c to h,l followed by fetch
+
+	ld	hl,buff
+	add	a,C
+	call	addh
+	ld	A,(hl)
+	ret
+
+setdisk:
+;change disks for this command, if requested
+
+	xor	A
+	ld	(comfcb),a	;clear disk name from fcb
+	ld	a,(sdisk)
+	or	A
+	ret	z		;no action if not specified
+	dec	A
+	ld	hl,cdisk
+	cp	(hl)
+	ret	z		;already selected
+	jp	select
+
+resetdisk:
+;return to original disk after command
+
+	ld	a,(sdisk)
+	or	A
+	ret	z		;no action if not selected
+	dec	A
+	ld	hl,cdisk
+	cp	(hl)
+	ret	z		;same disk
+	ld	a,(cdisk)
+	jp	select
+
+;
+;individual intrinsics follow
+;
+
+direct:
+;directory search
+
+	call	fillfcb0	;comfcb gets file name
+	call	setdisk		;change disk drives if requested
+	ld	hl,comfcb+1
+	ld	A,(hl)		;may be empty request
+	cp	' '
+	jr	nz,dir1		;skip fill of ??? if not blank
+
+;set comfcb to all ??? for current disk
+
+	ld	B,11		;length of fill ????????.???
+
+dir0:	
+
+	ld	(hl),'?'
+	inc	hl
+	dec	B
+	jr	nz,dir0
+
+;not a blank request, must be in comfcb
+
+dir1:	
+
+	lä	E,0
+	push	de		;e counts directory entries
+	call	searchcom	;first one has been found
+	call	z,nofile	;not found message
+
+dir2:	
+
+	jr	z,endir
+
+;found, but may be system file
+Š	ld	a,(dcnt)	;get the location of the element
+	rrca
+	rrca
+	rrca
+	and	1100000b
+	ld	C,A
+
+;c contains base index into buff for dir entry
+
+	ld	A,sysfile
+	call	addhcf		;value to a
+	rla
+	jr	c,dir6		;skip if system file
+
+;c holds index into buffer
+;another fcb found, new line?
+
+	pop	de
+	ld	A,E
+	inc	E
+	push	de
+
+;e=0,1,2,3,...new line if mod 4 = 0
+
+	and	11b
+	push	af		;and save the test
+	jr	nz,dirhdr0	;header on current line
+	call	crlf
+	push	bc
+	call	cselect
+	pop	bc
+
+;current disk in a
+
+	add	a,'A'
+	call	printbc
+	ld	A,':'
+	call	printbc
+	jr	dirhdr1		;skip current line hdr
+
+dirhdr0:	
+
+	call	blank		;after last one
+	ld	A,':'
+	call	printbc
+
+dirhdr1:
+
+	call	blank
+
+;compute position of name in buffer
+
+	ld	B,1		;start with first character of name
+
+dir3:	
+
+	ld	A,B
+	call	addhcf		;buff+a+c fetched
+	and	7fh		;mask flags
+
+;may delete trailing blanks
+
+	cp	' '
+	jr	nz,dir4		;check for blank type
+	pop	af
+	push	af		;may be 3rd item
+	cp	3
+	jr	nz,dirb		;place blank at end if not
+	ld	A,9
+	call	addhcf		;first char of type
+	and	7fh
+	cp	' '
+	jr	z,dir5
+
+;not a blank in the file type field
+
+dirb:	
+
+	ld	A,' '		;restore trailing filename chr
+
+dir4:
+
+	call	printbc		;char printed
+	inc	B
+	ld	A,B
+	cp	12
+	jr	nc,dir5
+
+;check for break between names
+
+	cp	9
+	jr	nz,dir3		;for another char
+
+;print a blank between names
+
+	call	blank
+	jr	dir3
+
+dir5:	
+;end of current entry
+
+	pop	af		;discard the directory counter (mod 4)
+
+dir6:	
+
+	call	break$key	;check for interrupt at keyboard
+	jr	nz,endir	;abort directory search
+	call	searchn
+	jr	dir2		;for another entry
+
+endir:	
+;end of directory scan
+
+	pop	de		;discard directory counter
+	jp	retcom
+
+erase:
+
+	call	fillfcb0	;cannot be all ???'s
+	cp	11
+	jr	nz,erasefile
+Š;erasing all of the disk
+
+	ld	bc,ermsg
+	call	print
+
+	call	readcom
+	ld	hl,comlen
+	dec	(hl)
+	jp	nz,ccp		;bad input
+	inc	hl
+	ld	A,(hl)
+	cp	'Y'
+	jp	nz,ccp
+
+;ok, erase the entire diskette
+
+	inc	hl
+	ld	(comaddr),hl	;otherwise error at retcom
+
+erasefile:
+
+	call	setdisk
+	ld	de,comfcb
+	call	delete
+	inc	A		;255 returned if not found
+	call	z,nofile	;no file message if so
+	jp	retcom
+
+
+ermsg:	defb	'ALL (Y/N)?',0
+
+
+type:
+
+	call	fillfcb0
+	jp	nz,comerr	;don't allow ?'s in file name
+	call	setdisk
+	call	openc		;open the file
+	jr	z,typerr	;zero flag indicates not found
+
+;file opened, read 'til eof
+
+	call	crlf
+	ld	hl,bptr
+	ld	(hl),255	;read first buffer
+
+type0:	
+;loop on bptr
+
+	ld	hl,bptr
+	ld	A,(hl)
+	cp	128		;end buffer
+	jr	c,type1
+	push	hl		;carry if 0,1,...,127
+
+;read another buffer full
+
+	call	diskreadc
+	pop	hl		;recover address of bptr
+	jr	nz,typeof	;hard end of file
+	xor	A
+	ld	(hl),A		;bptr = 0
+
+type1:	
+;read character at bptr and print
+
+	inc	(hl)		;bptr = bptr + 1
+	ld	hl,buff
+	call	addh		;h,l addresses char
+	ld	A,(hl)
+	cp	eofile
+	jp	z,retcom
+	call	printchar
+	call	break$key
+	jp	nz,retcom	;abort if break
+	jr	type0		;for another character
+
+typeof:	
+;end of file, check for errors
+
+	dec	A
+	jp	z,retcom
+	call	readerr
+
+typerr:	
+
+	call	resetdisk
+	jp	comerr
+
+save:
+
+	call	getnumber	; value to register a
+	push	af		;save it for later
+
+;should be followed by a file to save the memory image
+
+	call	fillfcb0
+	jp	nz,comerr	;cannot be ambiguous
+	call	setdisk		;may be a disk change
+	ld	de,comfcb
+	push	de
+	call	delete		;existing file removed
+	pop	de
+	call	make		;create a new file on disk
+	jr	z,saverr	;no directory space
+	xor	A
+	ld	(comrec),a	; clear next record field
+	pop	af		;#pages to write is in a, change to #sectors
+Š	ld	L,A
+	ld	H,0
+	add	hl,hl
+
+	ld	de,tran		;h,l is sector count, d,e is load address
+
+save0:	
+;check for sector count zero
+
+	ld	A,H
+	or	L
+	jr	z,save1		;may be completed
+	dec	hl		;sector count = sector count - 1
+	push	hl		;save it for next time around
+	ld	hl,128
+	add	hl,de
+	push	hl		;next dma address saved
+	call	setdma		;current dma address set
+	ld	de,comfcb
+	call	diskwrite
+	pop	de
+	pop	hl		;dma address, sector count
+	jr	nz,saverr	;may be disk full case
+	jr	save0		;for another sector
+
+save1:	
+;end of dump, close the file
+
+	ld	de,comfcb
+	call	close
+	inc	A		; 255 becomes 00 if error
+	jr	nz,retsave	;for another command
+
+saverr:	
+;must be full or read only disk
+
+	ld	bc,fullmsg
+	call	print
+
+retsave:
+;reset dma buffer
+
+	call	setdmabuff
+	jp	retcom
+
+
+fullmsg:	defb	'NO SPACE',0
+
+
+rename:
+;rename a file on a specific disk
+
+	call	fillfcb0
+	jp	nz,comerr	;must be unambiguous
+	ld	a,(sdisk)
+	push	af		;save for later compare
+	call	setdisk		;disk selected
+	call	searchcom	;is new name already there?
+	jr	nz,renerr3
+
+;file doesn't exist, move to second half of fcb
+
+	ld	hl,comfcb
+	ld	de,comfcb+16
+	ld	B,16
+	call	move0
+
+;check for = or left arrow
+
+	ld	hl,(comaddr)
+	ex	de,hl
+	call	deblank
+	cp	'='
+	jr	z,ren1		;ok if =
+	cp	la
+	jr	nz,renerr2
+
+ren1:	
+
+	ex	de,hl
+	inc	hl
+	ld	(comaddr),hl	;past delimiter
+
+;proper delimiter found
+
+	call	fillfcb0
+	jr	nz,renerr2
+
+;check for drive conflict
+
+	pop	af
+	ld	B,A		;previous drive number
+	ld	hl,sdisk
+	ld	A,(hl)
+	or	A
+	jr	z,ren2
+
+;drive name was specified.  same one?
+
+	cp	B
+	ld	(hl),B
+	jr	nz,renerr2
+
+ren2:	
+
+	ld	(hl),B		;store the name in case drives switched
+	xor	A
+	ld	(comfcb),a
+	call	searchcom	;is old file there?
+	jr	z,renerr1
+
+;everything is ok, rename the file
+
+	ld	de,comfcb
+	call	renam
+	jp	retcom
+
+renerr1:	
+; no file on disk
+	
+	call	nofile
+	jp	retcom
+
+renerr2:	
+; ambigous reference/name conflict
+
+	call	resetdisk
+	jp	comerr
+
+renerr3:	
+; file already exists
+
+	ld	bc,renmsg
+	call	print
+	jp	retcom
+
+
+renmsg:	defb	'FILE EXISTS',0
+
+user:
+;set user number
+
+	call	getnumber	; leaves the value in the accumulator
+	cp	16
+	jp	nc,comerr	; must be between 0 and 15
+	ld	E,A		;save for setuser call
+	ld	a,(comfcb+1)
+	cp	' '
+	jp	z,comerr
+	ld	A,E
+	call	setuser		;new user number set
+ 	jp	endcom
+
+userfunc:
+;load user function and set up for execution
+
+	ld	a,(comfcb+1)
+	cp	' '
+	jr	nz,user0
+
+;no file name, but may be disk switch
+
+	ld	a,(sdisk)
+	or	A
+	jp	z,endcom	;no disk name if 0
+	dec	A
+	ld	(cdisk),a	;set user/disk
+	call	select
+	jp	endcom
+
+user0:	
+;file name is present
+
+	ld	de,comfcb+9
+	ld	a,(de)
+	cp	' '
+	jp	nz,comerr	;type ' '
+	push	de
+	call	setdisk
+	pop	de
+	ld	hl,comtype	;.com
+	call	movename	;file type is set to .com
+	call	openc
+	jp	z,userer
+
+;file opened properly, read it into memory
+
+	ld	hl,tran		;transient program base
+
+load0:	
+
+	push	hl		;save dma address
+
+	ex	de,hl
+	call	setdma
+	ld	de,comfcb
+	call	diskread
+	jr	nz,load1
+
+;sector loaded, set new dma address and compare
+
+	pop	hl
+	ld	de,128
+	add	hl,de
+	ld	de,tranm	;has the load overflowed?
+	ld	A,L
+	sub	E
+	ld	A,H
+	sbc	a,D
+	jr	nc,loaderr
+	jr	load0		;for another sector
+
+load1:	
+
+	pop	hl
+	dec	A
+	jr	nz,loaderr	;end file is 1
+	call	resetdisk	;back to original disk
+	call	fillfcb0
+	ld	hl,sdisk
+	push	hl
+	ld	A,(hl)
+	ld	(comfcb),a	;drive number set
+	ld	A,16
+	call	fillfcb		;move entire fcb to memory
+	pop	hl
+	ld	A,(hl)
+	ld	(comfcb+16),a
+	xor	A
+	ld	(comrec),a	;record number set to zero
+	ld	de,fcb
+	ld	hl,comfcb
+	ld	B,33
+	call	move0
+
+;move command line to buff
+
+	ld	hl,combuf
+
+bmove0:	
+
+	ld	A,(hl)
+	or	A
+	jr	z,bmove1
+	cp	' '
+	jr	z,bmove1
+	inc	hl
+	jr	bmove0		;for another scan
+
+;first blank position found
+
+bmove1:	
+
+	ld	B,0
+	ld	de,buff+1
+
+;ready for the move
+
+bmove2:	
+
+	ld	A,(hl)
+	ld	(de),a
+	or	A
+	jr	z,bmove3
+Š;more to move
+
+	inc	B
+	inc	hl
+	inc	de
+	jr	bmove2
+
+bmove3:	
+;b has character count
+
+	ld	A,B
+	ld	(buff),a
+	call	crlf
+
+;now go to the loaded program
+
+	call	setdmabuff	;default dma
+	call	saveuser	;user code saved
+	ld	hl,(ZEROADD)
+	ld	C,4
+
+ZMOVE:	
+
+	ld	(hl),0
+	inc	hl
+	dec	C
+	jr	nz,ZMOVE
+
+;low memory diska contains user code
+
+	call	tran		;gone to the loaded program
+	ld	sp,stack	;may come back here
+	ld	a,(USERNO)
+	ld	E,A
+	call	SETUSER
+	ld	a,(CDISK)
+	call	select
+	jp	ccp
+
+userer:	
+;arrive here on command error
+
+	call	resetdisk
+	jp	comerr
+
+loaderr:	
+;cannot load the program
+	
+	ld	bc,loadmsg
+	call	print
+	jr	retcom
+
+
+loadmsg:	defb	'BAD LOAD',0
+comtype:	defb	'COM'	;for com files
+
+
+
+retcom:	
+;reset disk before end of command check
+
+	call	resetdisk
+
+endcom:	
+;end of intrinsic command
+
+	call	fillfcb0	;to check for garbage at end of line
+	ld	a,(comfcb+1)
+	sub	' '
+	ld	hl,sdisk
+	or	(hl)
+
+;0 in accumulator if no disk selected, and blank fcb
+
+	jp	nz,comerr
+	jp	ccp
+
+;
+;	data areas
+;
+	defs	16	;8 level stack
+
+stack:
+
+;
+;	'submit' file control block
+;
+
+subfcb:	defb	1,'$$$     '	;file name is $$$
+	defb	'SUB',0
+
+sub$s1:	defb	0	;file type is sub
+submod:	defb	0	;module number
+subrc:	defs	1	;record count filed
+	defs	16	;disk map
+subcr:	defs	1	;current record to read
+
+;
+;	command file control block
+;
+Šcomfcb:	defs	32	;fields filled in later
+comrec:	defs	1	;current record to read/write
+dcnt:	defs	1	;disk directory count (used for error codes)
+cdisk:	defs	1	;current disk
+sdisk:	defs	1	;selected disk for current operation
+			;none=0, a=1, b=2 ...
+
+USERNO:	defs	1	;CURRENT USER NUMBER
+bptr:	defs	1	;buffer pointer
+
+	; this is code tto make the BDOS (which follows) be on a 
+	; 256 byte page boundry. (make the linker happy)
+last:	defb	0
+	org	(((last-base)+255) and 0FF00h) -1
+	defb	0
+
+	end	ccploc
+
+

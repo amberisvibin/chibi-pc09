@@ -1,0 +1,15 @@
+Please note: line 2528 in BDOS.MAC is corrupted. It should read
+
+        jp      z,COPY$DIRLOC   ;stop at end of dir
+
+--------------------------
+
+This zip file contains the original source for Personal CP/M 1.0. 
+If anybody figures out anything about this code, please drop an
+email message to me at : 
+
+gaby@gaby.de
+
+and I'll pass it on.
+
+tnx

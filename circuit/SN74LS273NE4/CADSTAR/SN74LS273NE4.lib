@@ -1,0 +1,16 @@
+.SN74LS273NE4 :1 ;Flip Flops Octal D-Type Flip-Flop w/Clear
+DIP762W55P254L2642H457Q20N
+*STM IC
+*NGS
+*PLB 1="'CLR'" 2="1Q" 3="1D" 4="2D" 5="2Q" 6="3Q" 7="3D" 8="4D" 9="4Q" 10="GND" 11="CLK" 12="5Q" 13="5D" 14="6D" 15="6Q" 16="7Q" 17="7D" 18="8D" 19="8Q" 20="VCC"
+*MXP 20
+*DFN SN74LS273NE4
+~!Mouser2 Part Number (595-SN74LS273NE4)
+~!Link Mouser2 Price/Stock (https://www.mouser.com/Search/Refine.aspx?Keyword=595-SN74LS273NE4)
+~!Manufacturer_Name (Texas Instruments)
+~!Manufacturer_Part_Number (SN74LS273NE4)
+~!Link Datasheet (http://www.ti.com/lit/ds/sdls090/sdls090.pdf)
+~!Height (4.57mm)
+~!3D_Model (SN74LS273NE4)
+SN74LS273NE4
+1.1!I 2.1!Y 3.1!I 4.1!I 5.1!Y 6.1!Y 7.1!I 8.1!I 9.1!Y 10.1!G 20.1!P 19.1!Y 18.1!I 17.1!I 16.1!Y 15.1!Y 14.1!I 13.1!I 12.1!Y 11.1!I 

@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'SN74LS273NE4'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER2_PART_NUMBER", "MOUSER2_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Texas Instruments", "SN74LS273NE4" (!) = "", "DIP762W55P254L2642H457Q20N", "Dual-In-Line Packages", "595-SN74LS273NE4", "https://www.mouser.com/Search/Refine.aspx?Keyword=595-SN74LS273NE4", "Flip Flops Octal D-Type Flip-Flop w/Clear", "http://www.ti.com/lit/ds/sdls090/sdls090.pdf", "4.57 mm"
+END_PART
+
+END.

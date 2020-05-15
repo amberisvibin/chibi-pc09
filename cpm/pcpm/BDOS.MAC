@@ -1,0 +1,4190 @@
+.z80
+subttl	Copyright Information
+	title	Personal CP/M BDOS, Version 1.0, April 1984
+;*****************************************************************
+;*****************************************************************
+;**                                                             **
+;**                 P E R S O N A L   C P / M                   **
+;**                                                             **
+;**   B a s i c    D i s k   O p e r a t i n g   S y s t e m    **
+;**                                                             **
+;**              I n t e r f a c e   M o d u l e                **
+;**                                                             **
+;*****************************************************************
+;*****************************************************************
+;
+;	Copyright (c) 1984
+;	Digital Research
+;	Box 579, Pacific Grove
+;	California
+
+subttl	Equates
+
+on	equ	0ffffh
+off	equ	00000h
+
+data_low equ	on		;code segment will be at lower address
+				;than data segment
+
+standard equ	on		;data not in separate segment
+
+	org	0000H
+BASE	equ	$
+
+;	bios value defined at end of module
+
+SSIZE	equ	32	;32 level stack
+
+;	low memory locations
+
+reboot	equ	0000h	;reboot system
+
+;
+;	equates for non graphic characters
+;
+ctlc	equ	03h	;control c
+ctle	equ	05h	;physical eol
+ctlh	equ	08h	;backspace
+ctlp	equ	10h	;prnt toggle
+ctlr	equ	12h	;repeat line
+ctls	equ	13h	;stop/start screen
+ctlu	equ	15h	;line delete
+ctlx	equ	18h	;=ctl-u
+ctlz	equ	1Ah	;end of file
+rubout	equ	7Fh	;char delete
+tab	equ	09h	;tab char
+cr	equ	0Dh	;carriage return
+lf	equ	0Ah	;line feed
+ctl	equ	5Eh	;up arrow
+
+subttl	PUBLICs and EXTRNs
+
+	name	('BDOS')
+
+	cseg
+
+				;used
+				; by
+	public	BDOS$CD
+	public	BDOS$DT
+	public	?bdos
+	public	?bdosc
+	public	?bdosw
+
+				;defined in
+	
+	extrn	?flush		;bios
+	extrn	?discd		;bios
+	extrn	?mov		;bios
+	extrn	?auxis		;bios
+	extrn	?auxos		;bios
+	extrn	?dscrf		;bios
+	extrn	?bytbc		;bios
+	extrn	?bytba		;bios
+
+subttl	BDOS Front End
+BDOS$CD:
+	defb	'654321'
+
+;	enter here from the user's program with function number in c,
+;	and information address in d,e
+
+	if	not data_low
+?bdos:
+	endif
+
+	jp	bdose	;past parameter block
+
+	defw	SUB$FLAG
+	defw	OLOG
+
+front_size	equ	$-bdos$cd	;size of block to load to front of
+					;data segment
+
+bdose:				;arrive here from user programs
+	ld	(info),de	;info = DE
+
+	ld	A,C		;FX=BDOS FUNCTION NUMBER
+	ld	(FX),a
+
+	ld	a,(ACTDSK)	;SELDSK=ACTDSK
+	ld	(SELDSK),a
+
+	ld	hl,0		;return value defaults to 0000
+	ld	(aret),hl
+
+	ld	(RESEL),hl	; RESEL,RELOG = FALSE
+
+;save user's stack pointer, set to local stack
+	ld	(entsp),sp	;entsp = SP
+
+	ld	sp,lstack	;local stack setup
+	ld	hl,goback	;return here after all functions
+	push	hl		;jmp goback equivalent to ret
+	ld	A,C
+	cp	nfuncs
+	jr	nc,HIGH$FX
+
+	ld	C,E		;possible output character to C
+	ld	hl,functab
+DISPATCH:
+	ld	E,A		;DE=func, HL=.ciotab
+	ld	D,0
+
+	add	hl,de		;DE=functab(func)
+	add	hl,de
+	ld	E,(hl)
+	inc	hl
+	ld	D,(hl)
+
+	ld	hl,(info)	;info in DE for later xchg
+	ex	de,hl		;dispatched
+	jp	(hl)
+subttl	Imbedded copyright message
+
+	defb	'COPYRIGHT (C) 1984, '
+	defb	'DIGITAL RESEARCH '
+	defb	'042384'
+subttl
+
+HIGH$FX:
+	cp	45
+	jp	z,FUNC45
+
+	cp	48
+	jp	z,FUNC48
+
+	cp	124
+	jp	z,func124
+
+	cp	125
+	jp	z,func125
+
+	ld	hl,XFUNCTAB
+	sub	109		; RETURN IF FX < 109
+	ret	c
+
+	cp	XNFUNCS		; RETURN IF FX >= 109 + XNFUNCS
+	ret	nc
+
+	jr	DISPATCH
+
+subttl	Cold & Warm Start Initialization
+?bdosc:				;COLD START INITIALIZATION ROUTINE
+	call	FUNC13
+	ld	C,CS$INIT$SIZE
+	jr	WS$INIT0
+
+?bdosw:				;WARM START INITIALIZATION ROUTINE
+	ld	C,WS$INIT$SIZE
+WS$INIT0:
+	xor	A
+	ld	hl,COLUMN
+
+WS$INIT1:
+	ld	(hl),A
+	inc	hl
+	dec	C
+	jr	nz,WS$INIT1
+
+	if	data_low	
+	ld	bc,front_size	;move an image of the front of the BDOS code
+	ld	de,bdos$dt	;segment to the front of the data segment for
+	ld	hl,bdos$cd	;systems with data lower in RAM
+	ldir
+	endif
+
+	ld	A,'$'
+	ld	(OUT$DELIM),a
+
+	call	SCAN$DRIVE
+	jp	NOSELECT1
+subttl	Dispatch Table for Functions
+functab:
+	defw	wbootf,func1,func2,func3
+	defw	punchf,listf,func6,func7
+	defw	func8,func9,func10,func11
+diskf	equ	($-functab)/2	;disk funcs
+	defw	func12,func13,func14,func15
+	defw	func16,func17,func18,func19
+	defw	func20,func21,func22,func23
+	defw	func24,func25,func26,func27
+ defw	func28,func29,func30,func31
+	defw	func32,func33,func34,func35
+	defw	func36,func37,func38,func39
+	defw	func40
+nfuncs	equ	($-functab)/2
+
+XFUNCTAB:
+	defw	FUNC109,FUNC110,FUNC111,FUNC112,FUNC113
+XNFUNCS	equ	($-XFUNCTAB)/2
+subttl Error Subroutine
+
+ERROR:	; C = ERROR #, A = FF => RETURN & DISPLAY MODE
+	push	af
+	push	bc
+	call	CPMERR
+	pop	bc
+	pop	af
+	inc	A
+	ret	z
+
+	dec	C
+	call	z,RESET$DRIVE
+	call	CONINF
+	jp	WBOOTF
+subttl	Console Handlers
+
+conin:
+;read console character to A
+	ld	hl,kbchar
+	ld	A,(hl)
+	ld	(hl),0
+	or	A
+	ret	nz
+
+				;no previous keyboard character ready
+	jp	coninf		;get character externally
+	;ret
+
+conech:				;read character with echo
+	call	conin
+	call	echoc
+	jr	c,CONECH1
+
+;character must be echoed before return
+	push	af
+	ld	C,A
+	call	tabout
+	pop	af
+	ret			;with character in A
+
+CONECH1:
+	cp	CTLS
+	ret	nz
+
+	call	CONBS
+	jr	CONECH
+
+echoc:
+;echo character if graphic
+;cr, lf, tab, or backspace
+	cp	cr
+	ret	z		;carriage return?
+
+	cp	lf
+	ret	z		;line feed?
+
+	cp	tab
+	ret	z		;tab?
+
+	cp	ctlh
+	ret	z		;backspace?
+
+	cp	' '
+	ret			;carry set if not graphic
+
+CONBRKX:
+	ld	a,(KBCHAR)
+	or	A
+	jr	nz,CONB1
+
+CONBRKX1:
+	call	CONSTF
+	and	1
+	ret
+
+conbrk:				;check for character ready
+	ld	a,(KBCHAR)
+	or	A
+	jr	nz,CONB1
+
+CONBRK1:
+	call	CONBRKX1
+	ret	z		; RETURN IF CHARACTER NOT READY
+
+;character ready, read it
+	call	coninf		;to A
+	cp	ctls
+	jr	nz,conb0	;check stop screen function
+
+CONBS:
+;found ctls, read next character
+	call	coninf		;to A
+	cp	ctlc
+	jp	z,reboot	;ctlc implies re-boot
+
+;not a reboot, act as if nothing has happened
+	xor	A
+	ret			;with zero in accumulator
+
+conb0:
+;character in accum, save it
+	ld	(kbchar),a
+conb1:
+;return with true set in accumulator
+	ld	A,-1
+	ret
+
+conout:
+;compute character position/write console char from C
+;compcol = true if computing column position
+	ld	a,(compcol)
+	or	A
+	jr	nz,compout
+
+;write the character, then compute the column
+;write console character from C
+	push	bc
+	call	CONBRK1		;check for screen stop function
+	pop	bc
+	push	bc		;recall/save character
+	call	conoutf		;externally, to console
+				;may be copying to the list device
+	ld	a,(listcp)
+	or	A
+	call	nz,listf	;to printer, if so
+	pop	bc		;recall the character
+compout:
+	ld	A,C		;recall the character
+				;and compute column position
+	ld	hl,column	;A = char, HL = .column
+	cp	rubout
+	ret	z		;no column change if nulls
+
+	inc	(hl)		;column = column + 1
+	cp	' '
+	ret	nc		;return if graphic
+
+;not graphic, reset column position
+	dec	(hl)		;column = column - 1
+	ld	A,(hl)
+	or	A
+	ret	z		;return if at zero
+
+;not at zero, may be backspace or end line
+	ld	A,C		;character back to A
+	cp	ctlh
+	jr	nz,notbacksp
+
+;backspace character
+	dec	(hl)		;column = column - 1
+	ret
+
+notbacksp:
+;not a backspace character, eol?
+	cp	lf
+	ret	nz		;return if not
+
+;end of line, column = 0
+	ld	(hl),0		;column = 0
+	ret
+
+ctlout:
+;send C character with possible preceding up-arrow
+	ld	A,C
+	call	echoc		;cy if not graphic (or special case)
+	jr	nc,tabout	;skip if graphic, tab, cr, lf, or ctlh
+
+;send preceding up arrow
+	push	af
+	ld	C,ctl
+	call	conout		;up arrow
+	pop	af
+	or	40h		;becomes graphic letter
+	ld	C,A		;ready to print
+	;(drop through to tabout)
+
+tabout:
+;expand tabs to console
+	ld	a,(FX)
+	dec	A
+	jr	z,TABOUT1
+
+	ld	a,(CONMODE)
+	and	10H
+	jp	nz,CONOUTF
+
+TABOUT1:
+	ld	A,C
+	cp	tab
+	jr	nz,conout	;direct to conout if not
+
+;tab encountered, move to next tab position
+tab0:
+	ld	C,' '
+	call	conout		;another blank
+	ld	a,(column)
+	and	111b		;column mod 8 = 0 ?
+	jr	nz,tab0		;back for another if not
+
+	ret
+
+backup:
+;back-up one screen position
+	call	pctlh
+	ld	C,' '
+	call	conoutf
+	;(drop through to pctlh)
+
+pctlh:
+;send ctlh to console without affecting column count
+	ld	C,ctlh
+	jp	conoutf
+	;ret
+
+crlfp:
+;print #, cr, lf for ctlx, ctlu, ctlr functions
+;then move to strtcol (starting column)
+	ld	C,'#'
+	call	conout
+	call	crlf
+
+;column = 0, move to position strtcol
+crlfp0:
+	ld	a,(column)
+	ld	hl,strtcol
+	cp	(hl)
+	ret	nc		;stop when column reaches strtcol
+
+	ld	C,' '
+	call	conout		;print blank
+	jr	crlfp0
+
+crlf:
+;carriage return line feed sequence
+	ld	C,cr
+	call	conout
+	ld	C,lf
+	jp	conout
+	;ret
+
+print:
+;print message until M(BC) = '$'
+	ld	hl,OUT$DELIM
+	ld	a,(bc)
+	cp	(hl)
+	ret	z		;stop on $
+
+;more to print
+	inc	bc
+	push	bc
+	ld	C,A		;char to C
+	call	tabout		;another character printed
+	pop	bc
+	jr	print
+
+read:	;read to info address (max length, current length, buffer)
+	ld	A,1
+	ld	(FX),a
+	ld	a,(column)
+	ld	(strtcol),a	;save start for ctl-x, ctl-h
+	ld	hl,(info)
+	ld	C,(hl)
+	inc	hl
+	push	hl
+	xor	A
+	ld	B,A
+	ld	(SAVE$POS),a
+
+;B = current buffer length,
+;C = maximum buffer length,
+;HL= next to fill - 1
+readnx:
+;read next character, BC, HL active
+	push	bc
+	push	hl		;blen, cmax, HL saved
+readn0:
+	call	conin		;next char in A
+	pop	hl
+	pop	bc		;reactivate counters
+	cp	cr
+	jp	z,readen	;end of line?
+
+	cp	lf
+	jp	z,readen	;also end of line
+
+	cp	ctlh
+	jr	nz,noth	;backspace?
+
+;do we have any characters to back over?
+	ld	a,(STRTCOL)
+	ld	D,A
+	ld	a,(COLUMN)
+	cp	D
+	jr	z,readnx
+
+	ld	(COMPCOL),a	;COL>0
+;characters remain in buffer, can we backup one
+	ld	a,b		;check character count	SCC	22 Apr 84
+	or	a		;			SCC	22 Apr 84
+	jr	z,linelen	;already 0, don't decr	SCC	22 Apr 84
+
+	dec	B		;remove one character
+;compcol > 0 marks repeat as length compute
+	jr	linelen		;uses same code as repeat
+noth:
+;not a backspace
+	cp	rubout
+	jr	nz,notrub	;rubout char?
+
+;rubout encountered, rubout if possible
+	ld	A,B
+	or	A
+	jr	z,readnx	;skip if len=0
+
+;buffer has characters, resend last char
+	ld	A,(hl)
+	dec	B
+	dec	hl		;A = last char
+;blen=blen-1, next to fill - 1 decremented
+	jp	rdech1		;act like this is an echo
+
+notrub:
+;not a rubout character, check end line
+	cp	ctle
+	jr	nz,note		;physical end line?
+
+;yes, save active counters and force eol
+	push	bc
+	ld	A,B
+	ld	(SAVE$POS),a
+	push	hl
+	call	crlf
+	xor	A
+	ld	(strtcol),a	;start position = 00
+	jr	readn0		;for another character
+
+note:
+;not end of line, list toggle?
+	cp	ctlp
+	jr	nz,notp		;skip if not ctlp
+
+;list toggle - change parity
+	push	hl		;save next to fill - 1
+	ld	hl,listcp	;HL=.listcp flag
+	ld	A,1
+	sub	(hl)		;True-listcp
+	ld	(hl),A		;listcp = not listcp
+	pop	hl
+	jr	readnx		;for another char
+
+notp:
+;not a ctlp, line delete?
+	cp	ctlx
+	jr	nz,notx
+
+	pop	hl		;discard start position
+;loop while column > strtcol
+backx:
+	ld	a,(strtcol)
+	ld	hl,column
+	cp	(hl)
+	jr	nc,read		;start again
+
+	dec	(hl)		;column = column - 1
+	call	backup		;one position
+	jr	backx
+
+notx:
+;not control-X, control-U?
+	cp	ctlu
+	jr	nz,notu		;skip if not
+
+;delete line (ctlu)
+	call	crlfp		;physical eol
+	pop	hl		;discard starting position
+	jp	read		;to start all over
+
+notu:
+;not line delete, repeat line?
+	cp	ctlr
+	jr	nz,notr
+
+	xor	A
+	ld	(SAVE$POS),a
+linelen:
+;repeat line, or compute line len (ctlh)
+;if compcol > 0
+	push	bc
+	call	crlfp		;save line length
+	pop	bc
+	pop	hl
+	push	hl
+	push	bc
+;bcur, cmax active, beginning buff at HL
+rep0:
+	ld	A,B
+	or	A
+	jr	z,rep1		;count len to 00
+
+	inc	hl
+	ld	C,(hl)		;next to print
+	dec	B
+	pop	de
+	push	de
+	ld	A,D
+	sub	B
+	ld	D,A
+	push	bc
+	push	hl		;count length down
+	ld	a,(save$pos)
+	cp	D
+	call	c,CTLOUT	;character echoed
+	pop	hl
+	pop	bc		;recall remaining count
+	jr	rep0		;for the next character
+
+rep1:
+;end of repeat, recall lengths
+;original BC still remains pushed
+	push	hl		;save next to fill
+	ld	a,(compcol)
+	or	A		;>0 if computing length
+	jp	z,readn0	;for another char if so
+
+;column position computed for ctlh
+	ld	hl,column
+	sub	(hl)		;diff > 0
+	ld	(compcol),a	;count down below
+;move back compcol-column spaces
+backsp:
+;move back one more space
+	call	backup		;one space
+	ld	hl,compcol
+	dec	(hl)
+	jr	nz,backsp
+
+	jp	readn0		;for next character
+
+notr:
+;not a ctlr, place into buffer
+rdecho:
+	inc	hl
+	ld	(hl),A		;character filled to mem
+	inc	B		;blen = blen + 1
+rdech1:
+;look for a random control character
+	push	bc
+	push	hl		;active values saved
+	ld	C,A		;ready to print
+	call	ctlout		;may be up-arrow C
+	pop	hl
+	pop	bc
+	ld	A,(hl)		;recall char
+	cp	ctlc		;set flags for reboot test
+	ld	A,B		;move length to A
+	jr	nz,notc		;skip if not a control c
+
+	cp	1		;control C, must be length 1
+	jp	z,reboot	;reboot if blen = 1
+
+				;length not one, so skip reboot
+notc:
+				;not reboot, are we at end of buffer?
+	cp	C
+	jp	c,readnx	;go for another if not
+
+readen:
+;end of read operation, store blen
+	pop	hl
+	ld	(hl),B		;M(current len) = B
+	ld	C,cr
+	jp	conout		;return carriage
+	;ret
+
+subttl	Character I/O Functions
+func1:
+;return console character with echo
+	call	conech
+	jr	sta$ret
+
+func2	equ	tabout
+;write console character with tab expansion
+
+func3:
+;return reader character
+	call	readerf
+	jr	sta$ret
+
+;func4:	equated to punchf
+;write punch character
+
+;func5:	equated to listf
+;write list character
+;write to list device
+
+func6:
+;direct console i/o - read if 0FFh
+	ld	A,C
+	inc	A
+	jr	z,dirinp	;0FFh => 00h, means input mode
+
+	inc	A
+	jp	nz,CONOUTF	;DIRECT OUTPUT FUNCTION
+
+;0FEh => STATUS
+	call	CONBRKX
+	ret	z
+
+	jp	LRET$EQ$FF
+  
+dirinp:
+	call	CONBRKX		;status check
+	ret	z		;skip, return 00 if not ready
+
+;character is ready, get it
+	call	CONIN		;to A
+	jr	sta$ret
+
+FUNC7:	;READER STATUS
+	call	?auxis
+	jr	STA$RET
+
+FUNC8:	;PUNCH STATUS
+	call	?auxos
+	jr	STA$RET
+
+func9:
+;write line until $ encountered
+	ex	de,hl		;was lhld info
+	ld	C,L
+	ld	B,H		;BC=string address
+	jp	print		;out to console
+
+func10	equ	read
+;read a buffered console line
+
+func11:
+;check console status
+	call	conbrk
+	;(drop through to sta$ret)
+
+sta$ret:
+;store the A register to aret
+	ld	(aret),a
+func$ret:
+	ret			;jmp goback (pop stack for non cp/m functions)
+
+setlret1:
+;set lret = 1
+	ld	A,1
+	jr	sta$ret
+subttl	CP/M-Plus Function 
+FUNC109:	;GET/SET CONSOLE MODE
+
+; CONMODE BITS = 7 6 5 4 3 2 1 0
+; DEFINED BITS =       4
+;
+; BIT 4 = 0:	Normal BDOS operation
+;	  1:	Supress BDOS expansion of tabs, ^P and ^S handling on
+;		console output
+
+	ld	hl,CONMODE
+TEST$SET:
+	ld	A,D
+	and	E
+	inc	A
+	ld	A,(hl)
+	jr	z,STA$RET
+
+	ld	(hl),E
+	ret
+
+FUNC110:	;GET/SET OUTPUT DELIMITER
+	ld	hl,OUT$DELIM
+	jr	TEST$SET
+
+FUNC111:	;PRINT BLOCK TO CONSOLE
+
+FUNC112:	;PRINT BLOCK TO LIST
+;
+	ex	de,hl
+	ld	E,(hl)
+	inc	hl
+	ld	D,(hl)
+	inc	hl
+	ld	C,(hl)
+	inc	hl
+	ld	B,(hl)
+	ex	de,hl
+;HL = ADDR OF STRING
+;BC = LENGTH OF STRING
+BLK$OUT:
+	ld	A,B
+	or	C
+	ret	z
+
+	push	bc
+	push	hl
+	ld	C,(hl)
+	call	BLK$OUT1
+	pop	hl
+	inc	hl
+	pop	bc
+	dec	bc
+	jr	BLK$OUT
+
+BLK$OUT1:
+	ld	a,(FX)
+	rra
+	jp	c,TABOUT
+
+	jp	LISTF
+subttl 	New Personal CP/M Functions
+FUNC113:	;PERFORM SCREEN FUNCTION
+	call	?dscrf
+	jp	sthl$ret
+
+func124:			;Byte BLT copy
+	call	?bytbc
+	jr	sta$ret
+
+func125:			;Byte BLT alter
+	call	?bytba
+	jr	sta$ret
+
+;
+;	end of Basic I/O System
+
+subttl	BDOS Disk functions
+
+;*****************************************************************
+;*****************************************************************
+;**                                                             **
+;**   B a s i c    D i s k   O p e r a t i n g   S y s t e m    **
+;**                                                             **
+;*****************************************************************
+;*****************************************************************
+
+dvers	equ	28h	;Personal CP/M 1.0
+
+;
+;	module addresses
+;
+
+;;;	literal constants
+
+true	equ	0ffh	;constant true
+false	equ	000h	;constant false
+enddir	equ	0ffffh	;end of directory
+byte	equ	1	;number of bytes for "byte" type
+word	equ	2	;number of bytes for "word" type
+
+;
+;	fixed addresses in low memory
+;
+
+tfcb	equ	005ch	;default fcb location
+tbuff	equ	0080h	;default buffer location
+subttl
+;
+;	error message handlers
+;
+
+rod$error:
+;report read/only disk error
+	ld	C,2
+	jr	GOERR
+
+rof$error:
+;report read/only file error
+	ld	C,3
+	jr	GOERR
+
+sel$error:
+	call	RESET$DRIVE
+;report select error
+	ld	C,4
+
+goerr:
+	ld	H,C
+	ld	L,0FFH
+	ld	(ARET),hl
+
+GOERR1:
+	ld	a,(ERRMODE)
+	inc	A
+	call	nz,ERROR
+
+	ld	A,0FFH
+	ld	(CURDSK),a
+
+	ld	a,(FX)
+	cp	27
+	jp	z,GOBACK0
+
+	cp	31
+	jp	z,GOBACK0
+
+	jp	GOBACK
+subttl	Local Subroutines for Bios Interface
+MOVE:
+	ld	B,0	;move number of bytes in C
+;
+MOVEX:
+	call	?mov
+	ret
+subttl	Select Disk
+selectdisk:
+
+;select the disk drive given by register D, and fill
+;the base addresses curtrka - alloca, then fill
+;the values of the disk parameter block
+
+	ld	C,D		;current disk# to c
+	ld	hl,LSN$NS
+	ld	B,0
+	add	hl,bc
+	ld	(LSN$ADD),hl
+;lsb of e = 0 if not yet logged - in
+	call	seldskf		;HL filled by call
+;HL = 0000 if error, otherwise disk headers
+	ld	A,H
+	or	L
+	ret	z		;return with 0000 in HL and z flag
+
+;disk header block address in hl
+	ld	E,(hl)
+	inc	hl
+	ld	D,(hl)
+	inc	hl		;DE=.tran
+	ld	(cdrmaxa),hl
+	inc	hl
+	inc	hl		;.cdrmax
+	ld	(curtrka),hl
+	inc	hl
+	inc	hl		;HL=.currec
+	ld	(curreca),hl
+	inc	hl
+	inc	hl		;HL=.buffa
+
+;DE still contains .tran
+
+	ex	de,hl
+	ld	(tranv),hl	;.tran vector
+	ld	hl,buffa	;DE= source for move, HL=dest
+	ld	C,addlist
+	call	move		;addlist filled
+
+;now fill the disk parameter block
+
+	ld	de,(dpbaddr)	;DE is source
+	ld	hl,sectpt	;HL is destination
+	ld	C,dpblist
+	call	move		;data filled
+
+;now set single/double map mode
+
+	ld	hl,(maxall)	;largest allocation number
+	ld	A,H		;00 indicates < 255
+	ld	hl,single
+	ld	(hl),true	;assume a=00
+	or	A
+	jr	z,retselect
+
+;high order of maxall not zero, use double dm
+
+	ld	(hl),false
+
+retselect:
+
+	scf
+	ret			;select disk function ok
+subttl	HOME - move to track 0, sector 0
+
+home:
+
+;move to home position, then offset to start of dir
+
+	call	homef		;move to track 00, sector 00 reference
+
+;lxi h,offset ;mov c,m ;inx h ;mov b,m ;call settrkf	;
+;first directory position selected
+
+	xor	A		;constant zero to accumulator
+	ld	hl,(curtrka)
+	ld	(hl),A
+	inc	hl
+	ld	(hl),A		;curtrk=0000
+	ld	hl,(curreca)
+	ld	(hl),A
+	inc	hl
+	ld	(hl),A		;currec=0000
+
+;curtrk, currec both set to 0000
+
+	ret
+subttl	RDBUFF & WRBUFF - read & write disk buffers
+
+rdbuff:
+;read buffer and check condition
+	ld	a,1
+	call	readf		;current drive, track, sector, dma
+	jr	diocomp		;check for i/o errors
+
+wrbuff:
+;write buffer and check condition
+;write type (wrtype) is in register C
+;wrtype = 0 => normal write operation
+;wrtype = 1 => directory write operation
+;wrtype = 2 => start of new block
+
+	call	writef		;current drive, track, sector, dma
+
+diocomp:	;check for disk errors
+
+	or	A
+	ret	z
+
+	ld	C,A
+	jp	GOERR
+subttl	SEEK$DIR - seek the record containing the current dir entry
+
+seek$dir:
+
+	ld	hl,(dcnt)	;directory counter to HL
+	ld	C,dskshf
+	call	hlrotr		;value to HL
+	ld	(arecord),hl	;ready for seek
+	;jmp	seek
+	;ret
+subttl	SEEK - seek the track given by actual record
+
+seek:
+;seek the track given by arecord (actual record)
+;load the registers from memory
+
+	ld	hl,arecord
+	ld	c,(hl)		;arecord
+	inc	hl
+	ld	b,(hl)
+	ld	hl,(curreca)
+	ld	e,(hl)		;currec
+	inc	hl
+	ld	d,(hl)
+	ld	hl,(curtrka)
+	ld	A,(hl)		;curtrk
+	inc	hl
+	ld	h,(hl)
+	ld	l,A
+
+;loop while arecord < currec
+seek0:
+
+	ld	A,c
+	sub	e
+	ld	A,b
+	sbc	a,d
+	jr	nc,seek1	;skip if arecord >= currec
+
+;currec = currec - sectpt
+
+	push	hl
+	ld	hl,(sectpt)
+	ld	A,e
+	sub	L
+	ld	e,A
+	ld	A,d
+	sbc	a,H
+	ld	d,A
+	pop	hl
+
+;curtrk = curtrk - 1
+
+	dec	hl
+	jr	seek0		;for another try
+
+seek1:
+;look while arecord >= (t:=currec + sectpt)
+
+	push	hl
+	ld	hl,(sectpt)
+	add	hl,de		;HL = currec+sectpt
+	jr	c,seek2		;can be > FFFFH
+
+	ld	A,c
+	sub	l
+	ld	A,b
+	sbc	a,h
+	jr	c,seek2		;skip if t > arecord
+
+;currec = t
+
+	ex	de,hl
+
+;curtrk = curtrk + 1
+
+	pop	hl
+	inc	hl
+	jr	seek1		;for another try
+
+seek2:	pop	hl
+;arrive here with updated values in each register
+
+	push	bc
+	push	de
+	push	hl		;to stack for later
+
+;stack contains (lowest) BC=arecord, DE=currec, HL=curtrk
+
+	ex	de,hl
+	ld	hl,(offset)
+	add	hl,de		;HL = curtrk+offset
+	ld	B,H
+	ld	C,L
+	call	settrkf		;track set up
+
+;note that BC - curtrk is difference to move in bios
+
+	pop	de		;recall curtrk
+	ld	hl,(curtrka)
+	ld	(hl),E
+	inc	hl
+	ld	(hl),D		;curtrk updated
+
+;now compute sector as arecord-currec
+
+	pop	de		;recall currec
+	ld	hl,(curreca)
+	ld	(hl),e
+	inc	hl
+	ld	(hl),d
+	pop	bc		;BC=arecord, DE=currec
+	ld	A,c
+	sub	e
+	ld	c,A
+	ld	A,b
+	sbc	a,d
+	ld	b,A
+	ld	hl,(tranv)
+	ex	de,hl		;BC=sector#, DE=.tran
+	call	sectran		;HL = tran(sector)
+	ld	C,L
+	ld	B,H		;BC = tran(sector)
+	jp	setsecf		;sector selected
+	;ret
+subttl	FCB constants
+
+;;	file control block (fcb) constants
+
+empty	equ	0E5h	;empty directory entry
+lstrec	equ	127	;last record# in extent
+recsiz	equ	128	;record size
+fcblen	equ	32	;file control block size
+dirrec	equ	recsiz/fcblen	;directory elts / record
+dskshf	equ	2	;log2(dirrec)
+dskmsk	equ	dirrec-1
+fcbshf	equ	5	;log2(fcblen)
+
+
+extnum	equ	12	;extent number field
+maxext	equ	31	;largest extent number
+ubytes	equ	13	;unfilled bytes field
+modnum	equ	14	;data module number
+maxmod	equ	15	;largest module number
+fwfmsk	equ	80h	;file write flag is high order modnum
+namlen	equ	15	;name length
+reccnt	equ	15	;record count field
+dskmap	equ	16	;disk map field
+lstfcb	equ	fcblen-1
+nxtrec	equ	fcblen
+ranrec	equ	nxtrec+1	;random record field (2 bytes)
+
+;
+;	reserved file indicators
+;
+
+rofile	equ	9	;high order of first type char
+invis	equ	10	;invisible file in dir command
+;	equ	11	;reserved
+subttl	Utility functions for file access
+dm$position:
+;compute disk map position for vrecord to HL
+
+	ld	hl,blkshf
+	ld	C,(hl)		;shift count to C
+	ld	a,(vrecord)	;current virtual record to A
+
+dmpos0:
+
+	or	A
+	rra
+	dec	C
+	jr	nz,dmpos0
+
+;A = shr(vrecord,blkshf) = vrecord/2**(sect/block)
+
+	ld	B,A		;save it for later addition
+	ld	A,8
+	sub	(hl)		;8-blkshf to accumulator
+	ld	C,A		;extent shift count in register c
+	ld	a,(extval)	;extent value ani extmsk
+
+dmpos1:
+;blkshf = 3,4,5,6,7, C=5,4,3,2,1
+;shift is 4,3,2,1,0
+
+	dec	C
+	jr	z,dmpos2
+
+	or	A
+	rla
+	jr	dmpos1
+
+dmpos2:
+;arrive here with A = shl(ext and extmsk,7-blkshf)
+
+	add	a,B		;add the previous shr(vrecord,blkshf) value
+
+;A is one of the following values, depending upon alloc
+;bks blkshf
+;1k   3     v/8 + extval * 16
+;2k   4     v/16+ extval * 8
+;4k   5     v/32+ extval * 4
+;8k   6     v/64+ extval * 2
+;16k  7     v/128+extval * 1
+
+	ret			;with dm$position in A
+subttl	GETDM - return disk map value from position given by BC
+
+getdm:
+
+	ld	hl,(info)	;base address of file control block
+	ld	de,dskmap
+	add	hl,de		;HL =.diskmap
+	add	hl,bc		;index by a single byte value
+	ld	a,(single)	;single byte/map entry?
+	or	A
+	jr	z,getdmd	;get disk map single byte
+
+	ld	L,(hl)
+	ld	H,0
+	ret			;with HL=00bb
+
+getdmd:
+
+	add	hl,bc		;HL=.fcb(dm+i*2)
+				;double precision value returned
+	ld	E,(hl)
+	inc	hl
+	ld	D,(hl)
+	ex	de,hl
+	ret
+subttl	INDEX - compute disk block number from current FCB
+
+index:
+	call	dm$position	;0...15 in register A
+	ld	C,A
+	ld	B,0
+	call	getdm		;value to HL
+	ld	(arecord),hl
+	ld	A,L
+	or	H
+	ret
+subttl	ATRAN - compute actual record address, assuming index called
+
+atran:
+	ld	a,(blkshf)	;shift count to reg A
+	ld	hl,(arecord)
+
+atran0:
+
+	add	hl,hl
+	dec	A
+	jr	nz,atran0	;shl(arecord,blkshf)
+
+	ld	(arecord1),hl	;save shifted block #
+	ld	a,(blkmsk)
+	ld	C,A		;mask value to C
+	ld	a,(vrecord)
+	and	C		;masked value in A
+	or	L
+	ld	L,A		;to HL
+	ld	(arecord),hl	;arecord=HL or (vrecord and blkmsk)
+	ret
+subttl	GETEXTA - get current extent field address
+
+getexta:
+	ld	hl,(info)
+	ld	de,extnum
+	add	hl,de		;HL=.fcb(extnum)
+	ret
+subttl	GETFCBA - compute RECCNT and NXTREC addresses for GET/SETFCB
+
+getfcba:
+	ld	hl,(info)
+	ld	de,reccnt
+	add	hl,de
+	ex	de,hl		;DE=.fcb(reccnt)
+	ld	hl,nxtrec-reccnt
+	add	hl,de		;HL=.fcb(nxtrec)
+	ret
+subttl	GETFCB - set variables from currently addressed FCB
+
+getfcb:
+	call	getfcba		;addresses in DE, HL
+	ld	A,(hl)
+	ld	(vrecord),a	;vrecord=fcb(nxtrec)
+	ex	de,hl
+	ld	A,(hl)
+	ld	(rcount),a	;rcount=fcb(reccnt)
+	call	getexta		;HL=.fcb(extnum)
+	ld	a,(extmsk)	;extent mask to a
+	and	(hl)		;fcb(extnum) and extmsk
+	ld	(extval),a
+	ret
+subttl	SETFCB - place values back into current FCB
+
+setfcb:
+	call	getfcba		;addresses to DE, HL
+	ld	a,(VRECORD)
+	ld	(hl),A
+	ld	a,(FX)
+	cp	22
+	jr	nc,setfcb_1
+
+	inc	(hl)
+
+setfcb_1:
+
+	ex	de,hl
+	ld	a,(rcount)
+	ld	(hl),A		;fcb(reccnt)=rcount
+	ret
+subttl	HLROTR -  HL rotated right by amount C
+
+hlrotr:
+	inc	C		;in case zero
+hlrotr0:
+	dec	C
+	ret	z		;return when zero
+
+	srl	h		;SCC - operation performed was actually a
+	rr	l		;'shift right logical' of HL
+	jr	hlrotr0
+subttl	HLROTL - HL rotated left by amount C
+
+hlrotl:
+	inc	C		;may be zero
+hlrotl0:
+	dec	C
+	ret	z		;return if zero
+
+	add	hl,hl
+	jr	hlrotl0
+subttl
+
+SCAN$DRIVE:
+
+	ld	hl,(DLOG)
+
+SD$0:
+
+	ld	A,16
+
+SD$1:
+
+	dec	A
+	add	hl,hl
+	jr	nc,SD$4
+
+	push	af
+	push	hl
+	ld	E,A
+	ld	a,(SCAN$FLAG)
+	inc	A
+	jr	z,SD$2
+
+	call	TMPSELECT
+	or	1
+	call	COPY$ALV
+	call	SET$DIR$BLKS
+	jr	SD$3
+
+SD$2:
+
+	ld	C,E
+	call	?discd
+
+SD$3:
+
+	pop	hl
+	pop	af
+
+SD$4:
+	or	A
+	jr	nz,SD$1
+
+	ret
+
+SET$DLOG:
+
+	ld	de,DLOG
+
+set$cdisk:
+
+	ld	a,(CURDSK)
+
+SET$CDISK1:
+
+	ld	C,A		;ready parameter for shift
+	ld	hl,1		;number to shift
+	call	hlrotl		;HL = mask to integrate
+	ld	a,(de)
+	or	L
+	ld	(de),a
+	inc	de
+	ld	a,(de)
+	or	H
+	ld	(de),a
+	ret
+
+nowrite:
+;return true if dir checksum difference occurred
+
+	ld	hl,(rodsk)
+
+TEST$VECTOR:
+
+	ld	a,(curdsk)
+	ld	C,A
+	call	hlrotr
+	ld	A,L
+	and	1b
+	ret			;non zero if nowrite
+
+TST$LOG$FXS:
+
+	ld	hl,LOG$FXS
+
+TST$LOG0:
+
+	ld	a,(FX)
+	ld	B,A
+
+TST$LOG1:
+
+	ld	A,(hl)
+	cp	B
+	ret	z
+
+	inc	hl
+	or	A
+	jr	nz,TST$LOG1
+
+	inc	A
+	ret
+
+TST$RELOG:
+
+	ld	hl,RELOG
+	ld	A,(hl)
+	or	A
+	ret	z
+
+	ld	(hl),0
+	call	CURSELECT
+	ld	hl,0
+	ld	(DCNT),hl
+	xor	A
+	ld	(DPTR),a
+	ret
+
+CHK$EXIT$FXS:
+
+	ld	hl,GOBACK
+	push	hl
+	ld	hl,RW$FXS
+	call	TST$LOG0
+	jr	z,CHK$MEDIA2
+
+	ld	hl,SC$FXS
+	call	TST$LOG0
+	jp	z,LRET$EQ$FF
+
+	pop	hl
+	ret
+
+SET$LSN:
+
+	ld	hl,(LSN$ADD)
+	ld	C,(hl)
+	call	GETEXTA
+	inc	hl
+	ld	(hl),C
+	ret
+
+SET$RLOG:
+
+	ld	hl,(OLOG)
+	call	TEST$VECTOR
+	ret	z
+
+	ld	de,RLOG
+	jr	SET$CDISK
+
+CHECK$FCB:
+
+	call	GETEXTA
+	inc	hl
+	ld	A,(hl)
+	ld	hl,(LSN$ADD)
+	cp	(hl)
+	call	nz,CHK$MEDIA1
+	call	GETMODNUM
+	and	40H
+	ret	z
+
+	ld	hl,(INFO)
+	ld	(hl),0
+	ret
+
+CHK$MEDIA1:
+
+	ld	hl,(RLOG)
+	call	TEST$VECTOR
+	ret	z
+
+	pop	hl
+	pop	hl
+
+CHK$MEDIA2:
+
+	ld	A,10
+	jp	STA$RET
+
+set$ro:
+;set current disk to read only
+
+	ld	de,RODSK
+	ld	a,(SELDSK)
+	call	SET$CDISK1
+
+;high water mark in directory goes to max
+
+	ld	hl,(dirmax)
+	inc	hl
+	ex	de,hl		;DE = directory max
+	ld	hl,(cdrmaxa)	;HL = .cdrmax
+	ld	(hl),E
+	inc	hl
+	ld	(hl),D		;cdrmax = dirmax
+	ret
+
+check$rodir:
+;check current directory element for read/only status
+
+	call	getdptra	;address of element
+
+check$rofile:
+;check current buff(dptr) or fcb(0) for r/o status
+
+	ld	de,rofile
+	add	hl,de		;offset to ro bit
+	ld	A,(hl)
+	rla
+	ret	nc		;return if not set
+	jp	rof$error
+
+check$write:
+;check for write protected disk
+
+	call	nowrite
+	ret	z		;ok to write if not rodsk
+
+	jp	rod$error	;read only disk error
+
+getdptra:
+;compute the address of a directory element at
+;positon dptr in the buffer
+
+	ld	hl,(buffa)
+	ld	a,(dptr)
+
+addh:
+;HL = HL + A
+
+	add	a,L
+	ld	L,A
+	ret	nc
+
+;overflow to H
+
+	inc	H
+	ret
+
+getmodnum:
+;compute the address of the module number
+;bring module number to accumulator
+;(high order bit is fwf (file write flag)
+
+	ld	hl,(info)
+	ld	de,modnum
+	add	hl,de		;HL=.fcb(modnum)
+	ld	A,(hl)
+	ret			;A=fcb(modnum)
+
+clrmodnum:
+;clear the module number field for user open/make
+
+	call	getmodnum
+	ld	(hl),0		;fcb(modnum)=0
+	ret
+
+setfwf:
+
+	call	getmodnum	;HL=.fcb(modnum), A=fcb(modnum)
+
+;set fwf (file write flag) to "1"
+
+	or	fwfmsk
+	ld	(hl),A	;fcb(modnum)=fcb(modnum) or 80h
+
+;also returns non zero in accumulator
+
+	ret
+
+compcdr:
+;return cy if cdrmax > dcnt
+
+	ld	de,(dcnt)	;DE = directory counter
+	ld	hl,(cdrmaxa)	;HL=.cdrmax
+	ld	A,E
+	sub	(hl)	;low(dcnt) - low(cdrmax)
+	inc	hl	;HL = .cdrmax+1
+	ld	A,D
+	sbc	a,(hl)	;hig(dcnt) - hig(cdrmax)
+
+;condition dcnt - cdrmax  produces cy if cdrmax>dcnt
+
+	ret
+
+setcdr:
+;if not (cdrmax > dcnt) then cdrmax = dcnt+1
+
+	call	compcdr
+	ret	c		;return if cdrmax > dcnt
+
+;otherwise, HL = .cdrmax+1, DE = dcnt
+
+	inc	de
+	ld	(hl),D
+	dec	hl
+	ld	(hl),E
+	ret
+
+subdh:
+;compute HL = DE - HL
+
+	ld	A,E
+	sub	L
+	ld	L,A
+	ld	A,D
+	sbc	a,H
+	ld	H,A
+	ret
+
+newchecksum:
+
+	ld	C,0FEH		;drop through to compute new checksum
+
+checksum:
+;compute current checksum record and update the
+;directory element if C=true, or check for = if not
+;ARECORD < chksiz?
+
+	ld	de,(ARECORD)
+	ld	hl,(chksiz)
+	call	subdh		;DE-HL
+	ret	nc		;skip checksum if past checksum vector size
+
+;ARECORD < chksiz, so continue
+
+	push	bc		;save init flag
+
+;COMPUTE CHECKSUM FOR CURRENT DIRECTORY BUFFER
+
+	ld	C,RECSIZ	;SIZE OF DIRECTORY BUFFER
+	ld	hl,(BUFFA)	;CURRENT DIRECTORY BUFFER
+	xor	A		;CLEAR CHECKSUM VALUE
+
+COMPUTECS0:
+
+	add	a,(hl)
+	inc	hl
+	dec	C		;CS=CS+BUFF(RECSIZ-C)
+	jr	nz,COMPUTECS0
+
+	ld	de,(checka)	;address of check sum vector
+	ld	hl,(ARECORD)
+	add	hl,de		;HL = .check(ARECORD)
+	pop	bc		;recall true=0ffh or false=00 to C
+	inc	C		;0ffh produces zero flag
+	jr	z,initial$cs
+	inc	C
+	jr	z,UPDATE$CS
+
+;not initializing, compare
+
+	cp	(hl)		;compute$cs=check(ARECORD)?
+	ret	z		;no message if ok
+	call	NOWRITE
+	ret	nz
+	ld	A,0FFH
+	ld	(RELOG),a
+	call	set$rlog
+
+RESET$DRIVE:
+
+	call	set$dlog
+	jp	RESET37X
+
+initial$cs:
+
+	cp	(hl)
+	ld	(hl),A
+	ret	z
+	ld	hl,(LSN$ADD)
+	ld	A,1
+	or	(hl)
+
+UPDATE$CS:
+;initializing the checksum
+
+	ld	(hl),A
+	ret
+
+wrdir:
+;write the current directory entry, set checksum
+
+	call	newchecksum	;initialize entry
+	call	setdir		;directory dma
+	ld	C,1		;indicates a write directory operation
+	call	wrbuff		;write the buffer
+	jr	setdata		;to data dma address
+	;ret
+
+rd$dir:
+;read a directory entry into the directory buffer
+
+	call	seek$dir
+	call	setdir		;directory dma
+	call	rdbuff		;directory record loaded
+	; jmp setdata to data dma address
+	;ret
+
+setdata:
+;set data dma address
+
+	ld	hl,dmaad
+	jr	setdma		;to complete the call
+
+setdir:
+;set directory dma address
+
+	ld	hl,buffa	;jmp setdma to complete call
+
+setdma:
+;HL=.dma address to set (i.e., buffa or dmaad)
+
+	ld	C,(hl)
+	inc	hl
+	ld	B,(hl)		;parameter ready
+	jp	setdmaf
+
+dir$to$user:
+;copy the directory entry to the user buffer
+;after call to search or searchn by user code
+
+	ld	de,(buffa)		;source is directory buffer
+	ld	hl,(dmaad)		;destination is user dma address
+	ld	C,recsiz		;copy entire record
+	call	MOVE
+	ld	hl,LRET
+	ld	A,(hl)
+	inc	A
+	ret	z
+	ld	a,(DCNT)
+	and	DSKMSK
+	ld	(hl),A
+	ret
+
+end$of$dir:
+;return zero flag if at end of directory, non zero
+;if not at end (end of dir if dcnt = 0ffffh)
+
+	ld	hl,(DCNT)
+	ld	A,L
+	and	H
+	inc	A
+	ret
+
+set$end$dir:
+;set dcnt to the end of the directory
+
+	ld	hl,enddir
+	ld	(dcnt),hl
+	ret
+
+read$dir:
+;read next directory entry, with C=true if initializing
+
+	ld	de,(dirmax)	;in preparation for subtract
+	ld	hl,(dcnt)
+	inc	hl
+	ld	(dcnt),hl	;dcnt=dcnt+1
+
+;continue while dirmax >= dcnt (dirmax-dcnt no cy)
+
+	call	subdh		;DE-HL
+	jr	nc,read$dir0
+
+;yes, set dcnt to end of directory
+
+	jr	set$end$dir	
+	;ret
+
+read$dir0:
+;not at end of directory, seek next element
+;initialization flag is in C
+
+	ld	a,(dcnt)
+	and	dskmsk		;low(dcnt) and dskmsk
+	ld	B,fcbshf	;to multiply by fcb size
+
+read$dir1:
+
+	add	a,A
+	dec	B
+	jr	nz,read$dir1
+
+;A = (low(dcnt) and dskmsk) shl fcbshf
+
+	ld	(dptr),a	;ready for next dir operation
+	or	A
+	ret	nz		;return if not a new record
+	push	bc		;save initialization flag C
+	call	rd$dir		;read the directory record
+	pop	bc		;recall initialization flag
+	call	CHECKSUM
+	ld	a,(RELOG)
+	or	A
+	ret	z
+	call	CHK$EXIT$FXS
+	call	TST$RELOG
+	jr	RD$DIR
+	;ret
+
+getallocbit:
+;given allocation vector position BC, return with byte
+;containing BC shifted so that the least significant
+;bit is in the low order accumulator position.  HL is
+;the address of the byte for possible replacement in
+;memory upon return, and D contains the number of shifts
+;required to place the returned value back into position
+
+	ld	A,C
+	and	111b
+	inc	A
+	ld	E,A
+	ld	D,A
+
+;d and e both contain the number of bit positions to shift
+
+	ld	H,B
+	ld	L,C
+	ld	C,3
+	call	HLROTR
+	ld	B,H
+	ld	C,L
+
+	ld	hl,(alloca)	;base address of allocation vector
+	add	hl,bc
+	ld	A,(hl)		;byte to A, hl = .alloc(BC shr 3)
+
+;now move the bit to the low order position of A
+
+rotl:	rlca
+	dec	E
+	jr	nz,rotl
+	ret
+
+set$alloc$bit:
+;BC is the bit position of ALLOC to set or reset.  The
+;value of the bit is in register E.
+
+	push	de
+	call	getallocbit	;shifted val A, count in D
+	and	11111110b	;mask low bit to zero (may be set)
+	pop	bc
+	or	C		;low bit of C is masked into A
+	;jmp rotr 		;to rotate back into proper position
+	;ret
+
+rotr:
+;byte value from ALLOC is in register A, with shift count
+;in register C (to place bit back into position), and
+;target ALLOC position in registers HL, rotate and replace
+
+	rrca
+	dec	D
+	jr	nz,rotr		;back into position
+	ld	(hl),A		;back to ALLOC
+	ret
+
+COPY$ALV:
+;IF Z FLAG SET, COPY 1ST ALV TO 2ND ALV
+;OTHERWISE, COPY 2ND ALV TO 1ST ALV
+
+	push	af
+	call	GET$NALBS
+	ld	B,H
+	ld	C,L
+	ld	hl,(ALLOCA)
+	ld	D,H
+	ld	E,L
+	add	hl,bc
+	pop	af
+	jp	z,MOVEX
+	ex	de,hl
+	jp	MOVEX
+
+SCANDM$AB:
+
+	push	bc
+ 	call	SCANDM$A
+ 	pop	bc
+	;JMP SCANDM$B
+
+SCANDM$B:
+;SET/RESET 2ND ALV
+
+	push	bc
+	call	GET$NALBS
+	ex	de,hl
+	ld	hl,(ALLOCA)
+	pop	bc
+	push	hl
+	add	hl,de
+	ld	(ALLOCA),hl
+	call	SCANDM$A
+	pop	hl
+	ld	(ALLOCA),hl
+	ret
+
+SCANDM$A:
+;SET/RESET 1ST ALLOCATION VECTOR
+;scan the disk map addressed by dptr for non-zero
+;entries, the allocation vector entry corresponding
+;to a non-zero entry is set to the value of C (0,1)
+
+	call	getdptra	;HL = buffa + dptr
+
+;HL addresses the beginning of the directory entry
+
+	ld	de,dskmap
+	add	hl,de		;hl now addresses the disk map
+	push	bc		;save the 0/1 bit to set
+	ld	C,fcblen-dskmap+1	;size of single byte disk map + 1
+
+scandm0:
+;loop once for each disk map entry
+
+	pop	de		;recall bit parity
+	dec	C
+	ret	z		;all done scanning?
+
+				;no, get next entry for scan
+	push	de		;replace bit parity
+	ld	a,(single)
+	or	A
+	jr	z,scandm1
+
+;single byte scan operation
+
+	push	bc		;save counter
+	push	hl		;save map address
+	ld	C,(hl)
+	ld	B,0		;BC=block#
+	jr	scandm2
+
+scandm1:
+;double byte scan operation
+
+	dec	C		;count for double byte
+	push	bc		;save counter
+	ld	C,(hl)
+	inc	hl
+	ld	B,(hl)		;BC=block#
+	push	hl		;save map address
+
+scandm2:
+;arrive here with BC=block#, E=0/1
+
+	ld	A,C
+	or	B		;skip if = 0000
+	jr	z,scanm3
+	ld	hl,(maxall)	;check invalid index
+	ld	A,L
+	sub	C
+	ld	A,H
+	sbc	a,B		;maxall - block#
+	call	nc,set$alloc$bit	
+
+;bit set to 0/1
+scanm3:	
+
+	pop	hl
+	inc	hl		;to next bit position
+	pop	bc		;recall counter
+	jr	scandm0		;for another item
+
+GET$NALBS:	;GET # OF ALLOCATION VECTOR BYTES
+
+	ld	hl,(MAXALL)
+	ld	C,3
+	call	HLROTR
+	inc	hl
+	ret
+
+SET$DIR$BLKS:
+
+	ld	de,(DIRBLK)
+	ld	hl,(ALLOCA)
+	ld	A,(hl)
+	or	E
+	ld	(hl),A
+	inc	hl
+	ld	A,(hl)
+	or	D
+	ld	(hl),A
+	ret
+
+initialize:
+;initialize the current disk
+;lret = false ;set to true if $ file exists
+;compute the length of the allocation vector
+;number of bytes in alloc vector is (maxall/8)+1
+
+	call	GET$NALBS
+	ld	B,H
+	ld	C,L		;count down BC til zero
+	ld	hl,(alloca)	;base of allocation vector
+
+;fill the allocation vector with zeros
+initial0:
+
+	ld	(hl),0
+	inc	hl		;alloc(i)=0
+	dec	bc		;count length down
+	ld	A,B
+	or	C
+	jr	nz,initial0
+
+;set the reserved space for the directory
+
+	call	SET$DIR$BLKS
+
+;allocation vector initialized, home disk
+
+	call	home
+
+;cdrmax = 3 (scans at least one directory record)
+
+	ld	hl,(cdrmaxa)
+	ld	(hl),3
+	inc	hl
+	ld	(hl),0
+
+;cdrmax = 0000
+
+	call	set$end$dir	;dcnt = enddir
+
+;read directory entries and check for allocated storage
+initial2:
+
+	ld	C,true
+	call	read$dir
+	call	end$of$dir
+	jp	z,COPY$ALV	;return if end of directory
+
+;not end of directory, valid entry?
+
+	call	getdptra	;HL = buffa + dptr
+	ld	A,0F0H
+	and	(hl)
+	jr	nz,INITIAL2
+
+;now scan the disk map for allocated blocks
+
+	ld	C,1		;set to allocated
+	call	SCANDM$A
+	call	setcdr		;set cdrmax to dcnt
+	jr	initial2	;for another entry
+
+copy$dirloc:
+;copy directory location to lret following
+;delete, rename, ... ops
+
+	ld	a,(dirloc)
+	jp	sta$ret	
+	;ret
+
+compext:
+;compare extent# in A with that in C, return nonzero
+;if they do not match
+
+	push	bc		;save C's original value
+	push	af
+	ld	a,(extmsk)
+	cpl
+	ld	B,A
+
+;B has negated form of extent mask
+
+	ld	A,C
+	and	B
+	ld	C,A		;low bits removed from C
+	pop	af
+	and	B		;low bits removed from A
+	sub	C
+	and	maxext		;set flags
+	pop	bc		;restore original values
+	ret
+
+SEARCH$EXTNUM:
+
+	ld	C,EXTNUM
+	jr	SEARCH
+
+SEARCH$NAMLEN:
+
+	ld	C,NAMLEN
+
+search:
+;search for directory element of length C at info
+
+	ld	A,0ffh
+	ld	(dirloc),a	;changed if actually found
+	ld	hl,searchl
+	ld	(hl),C		;searchl = C
+	ld	hl,(info)
+	ld	(searcha),hl	;searcha = info
+	call	set$end$dir	;dcnt = enddir
+	call	home		;to start at the beginning
+;(drop through to searchn)	
+
+searchn:
+;search for the next directory element, assuming
+;a previous call on search which sets searcha and
+;searchl
+
+	ld	C,false
+	call	read$dir	;read next dir element
+	call	end$of$dir
+	jr	z,search$fin	;skip to end if so
+
+
+;not end of directory, scan for match
+
+	ld	hl,(searcha)	
+	ex	de,hl		;DE=beginning of user fcb 
+	ld	a,(de)		;first character
+	cp	empty		;keep scanning if empty
+	jr	z,searchnext
+
+;not empty, may be end of logical directory
+
+	push	de		;save search address
+	call	compcdr		;past logical end?
+	pop	de		;recall address
+	jr	nc,search$fin	;artificial stop
+
+searchnext:
+
+	xor	A
+	ld	(USER0$SEARCH),a
+	call	getdptra	;HL = buffa+dptr
+	ld	a,(searchl)
+	ld	C,A		;length of search to c
+	ld	B,0		;b counts up, c counts down
+
+searchloop:
+
+	ld	A,C
+	or	A
+	jr	z,endsearch
+
+	ld	a,(de)
+	cp	'?'
+	jr	z,searchok	;? matches all
+
+;scan next character if not ubytes
+
+	ld	A,B
+	cp	ubytes
+	jr	z,searchok
+
+;not the ubytes field, extent field?
+
+	cp	extnum		;may be extent field
+	ld	a,(de)		;fcb character
+	jr	z,searchext	;skip to search extent
+
+	jr	c,skipsys	;skip test for sys flag	SCC	23 Apr 84
+
+	sub	(hl)		;			SCC	23 Apr 84
+	and	3Fh		;			SCC	23 Apr 84
+	jr	z,searchok	;			SCC	23 Apr 84
+
+	ld	a,(de)		;get FCB char again	SCC	23 Apr 84
+skipsys:			;			SCC	23 Apr 84
+
+	sub	(hl)
+	and	7Fh		;mask-out flags/extent modulus
+	jr	z,SEARCHOK
+
+	ld	A,(hl)
+	or	b
+	jr	nz,SEARCHN
+
+	ld	a,(FX)
+	cp	15
+	jr	nz,SEARCHN
+
+	ld	a,(USRCODE)
+	or	A
+	jr	z,SEARCHN
+
+	ld	A,0FFH
+	ld	(USER0$SEARCH),a
+	jr	SEARCHOK
+
+searchext:
+;A has fcb character
+;attempt an extent # match
+
+	push	bc		;save counters
+	ld	C,(hl)		;directory character to c
+	call	compext		;compare user/dir char
+	pop	bc		;recall counters
+	jr	nz,searchn	;skip if no match
+
+searchok:
+;current character matches
+
+	inc	de
+	inc	hl
+	inc	B
+	dec	C
+	jr	searchloop
+
+endsearch:
+
+	xor	A
+	ld	(DIRLOC),a
+	ld	(LRET),a
+	ld	hl,USER0$SEARCH
+	inc	(hl)
+	ret	nz
+	ld	hl,(DCNT)
+	ld	(SDCNT),hl
+	jp	SEARCHN
+
+search$fin:
+;end of directory, or empty name
+
+	call	set$end$dir	;may be artifical end
+
+LRET$EQ$FF:
+
+	ld	A,255
+	ld	B,A
+	inc	B
+	jp	sta$ret
+
+delete:
+;delete the currently addressed file
+
+	call	RESELECT
+	call	check$write	;write protected?
+	call	SEARCH$EXTNUM	;search through file type
+	ret	z
+
+DELETE00:
+
+	jr	z,DELETE1
+	call	CHECK$RODIR
+	ld	hl,(INFO)
+	call	CHK$WILD
+	jr	nz,DELETE11
+	call	SEARCHN
+	jr	DELETE00
+
+DELETE1:
+
+	call	SEARCH$EXTNUM
+
+DELETE10:
+
+	jp	z,COPY$DIRLOC
+
+DELETE11:
+
+	call	GETDPTRA
+	ld	(hl),EMPTY
+	ld	C,0
+	call	SCANDM$AB
+	call	SET$DIR$BLKS
+	call	DELETE$SUB
+	call	WRDIR
+	call	SEARCHN
+	jr	DELETE10
+
+CHK$WILD:
+
+	ld	C,11
+
+CHK$WILD1:
+
+	inc	hl
+	ld	A,3FH
+	sub	(hl)
+	and	7FH
+	ret	z
+	dec	C
+	jr	nz,CHK$WILD1
+	or	A
+	ret
+
+get$block:
+;given allocation vector position BC, find the zero bit
+;closest to this position by searching left and right.
+;if found, set the bit to one and return the bit position
+;in hl.  if not found (i.e., we pass 0 on the left, or
+;maxall on the right), return 0000 in hl
+
+	ld	D,B
+	ld	E,C		;copy of starting position to de
+
+lefttst:
+
+	ld	A,C
+	or	B
+	jr	z,righttst	;skip if left=0000
+
+;left not at position zero, bit zero?
+
+	dec	bc
+	push	de
+	push	bc		;left,right pushed
+	call	getallocbit
+	rra
+	jr	nc,retblock	;return block number if zero
+
+;bit is one, so try the right
+
+	pop	bc
+	pop	de		;left, right restored
+
+righttst:
+
+	ld	hl,(maxall)	;value of maximum allocation#
+	ld	A,E
+	sub	L
+	ld	A,D
+	sbc	a,H		;right=maxall?
+	jr	nc,retblock0	;return block 0000 if so
+	inc	de
+	push	bc
+	push	de		;left, right pushed
+	ld	B,D
+	ld	C,E		;ready right for call
+	call	getallocbit
+	rra
+	jr	nc,retblock	;return block number if zero
+	pop	de
+	pop	bc		;restore left and right pointers
+	jr	lefttst		;for another attempt
+
+retblock:
+
+	rla
+	inc	A		;bit back into position and set to 1
+
+;d contains the number of shifts required to reposition
+
+	call	rotr		;move bit back to position and store
+	pop	hl
+	pop	de		;HL returned value, DE discarded
+	ret
+
+retblock0:
+;cannot find an available bit, return 0000
+
+	ld	A,C	
+	or	B
+	jr	nz,lefttst	;also at beginning
+	ld	hl,0000h
+	ret
+
+copy$fcb:
+;copy the entire file control block
+
+	ld	C,0
+	ld	E,fcblen	;start at 0, to fcblen-1
+	;jmp copy$dir
+
+copy$dir:
+;copy fcb information starting at C for E bytes
+;into the currently addressed directory entry
+
+	push	de		;save length for later
+	ld	B,0		;double index to BC
+	ld	hl,(info)	;HL = source for data
+	add	hl,bc
+	push	hl
+	call	TEST$SUB
+	ld	C,0FFH
+	call	z,SET$SUB$FLAG
+	pop	de		;DE=.fcb(C), source for copy
+	call	getdptra	;HL=.buff(dptr), destination
+	pop	bc		;DE=source, HL=dest, C=length
+	call	move		;data moved
+
+seek$copy:
+;enter from close to seek and copy current element
+
+	call	seek$dir	;to the directory element
+	jp	wrdir		;write the directory element
+	;ret
+
+TEST$SUB:
+
+	inc	hl
+	ld	de,SUB$FCB
+	ld	C,11
+
+TEST$SUB1:
+
+	ld	a,(de)
+	cp	(hl)
+	ret	nz
+	inc	de
+	inc	hl
+	dec	C
+	jr	nz,TEST$SUB1
+	xor	A
+	ret
+
+
+SUB$FCB:	defb	'$$$     SUB'
+
+
+DELETE$SUB:
+
+	call	GETDPTRA
+	call	TEST$SUB
+	ld	C,0
+	ret	nz
+	;JMP  SET$SUB$FLAG
+
+SET$SUB$FLAG:
+
+	ld	a,(CURDSK)
+	or	A
+	ret	nz
+	ld	hl,SUB$FLAG
+	ld	(hl),C
+	ret
+
+rename:
+;rename the file described by the first half of
+;the currently addressed file control block. the
+;new name is contained in the last half of the
+;currently addressed file conrol block.  the file
+;name and type are changed, but the reel number
+;is ignored.  the user number is identical
+
+	call	check$write	;may be write protected
+
+;search up to the extent field
+
+	call	RESELECT
+	call	SEARCH$EXTNUM
+
+;copy position 0
+
+	ld	hl,(info)
+	ld	A,(hl)		;HL=.fcb(0), A=fcb(0)
+	ld	de,dskmap
+	add	hl,de		;HL=.fcb(dskmap)
+	ld	(hl),A		;fcb(dskmap)=fcb(0)
+
+;assume the same disk drive for new named file
+rename0:
+
+	jð	z,COPY$DIRLOÃ	;stoð aô enä oæ dir
+	call	DELETE$SUB
+
+;not end of directory, rename next element
+
+	call	check$rodir	;may be read-only file
+	ld	C,dskmap
+	ld	E,extnum
+	call	copy$dir
+
+;element renamed, move to next
+
+	call	searchn
+	jr	rename0
+
+indicators:
+;set file indicators for current fcb
+
+	call	RESELECT
+	call	SEARCH$EXTNUM	;through file type
+
+indic0:
+
+	jp	z,COPY$DIRLOC	;stop at end of dir
+
+;not end of directory, continue to change
+
+	ld	C,0
+	ld	E,extnum	;copy name
+	call	copy$dir
+	call	searchn
+	jr	indic0
+
+open:
+;search for the directory entry, copy to fcb
+
+	call	SEARCH$NAMLEN
+
+OPEN1:
+
+	ret	z	;return with lret=255 if end
+
+;not end of directory, copy fcb information
+open$copy:
+;(referenced below to copy fcb info)
+
+	call	getexta
+	ld	A,(hl)
+	push	af
+ 	push	hl		;save extent#
+	call	getdptra
+	ex	de,hl		;DE = .buff(dptr)
+	ld	hl,(info)	;HL=.fcb(0)
+	ld	C,nxtrec	;length of move operation
+	push	de		;save .buff(dptr)
+	call	move		;from .buff(dptr) to .fcb(0)
+
+;note that entire fcb is copied, including indicators
+
+	call	setfwf		;sets file write flag
+	pop	de
+	ld	hl,extnum
+	add	hl,de		;HL=.buff(dptr+extnum)
+	ld	C,(hl)		;C = directory extent number
+	ld	hl,reccnt
+	add	hl,de		;HL=.buff(dptr+reccnt)
+	ld	B,(hl)		;B holds directory record count
+	pop	hl
+	pop	af
+	ld	(hl),A		;restore extent number
+
+;HL = .user extent#, B = dir rec cnt, C = dir extent#
+;if user ext < dir ext then user := 128 records
+;if user ext = dir ext then user := dir records
+;if user ext > dir ext then user := 0 records
+
+	ld	A,C
+	cp	(hl)
+	ld	A,B		;ready dir reccnt
+	jr	z,open$rcnt	;if same, user gets dir reccnt
+	ld	A,0
+	jr	c,open$rcnt	;user is larger
+	ld	A,128		;directory is larger
+
+open$rcnt:		;A has record count to fill
+
+	ld	hl,(info)
+	ld	de,reccnt
+	add	hl,de
+	ld	(hl),A
+	ret
+ 
+mergezero:
+;HL = .fcb1(i), DE = .fcb2(i),
+;if fcb1(i) = 0 then fcb1(i) := fcb2(i)
+
+	ld	A,(hl)
+	inc	hl
+	or	(hl)
+	dec	hl
+	ret	nz		;return if = 0000
+	ld	a,(de)
+	ld	(hl),A
+	inc	de
+	inc	hl		;low byte copied
+	ld	a,(de)
+	ld	(hl),A
+	dec	de
+	dec	hl		;back to input form
+	ret
+
+close:
+;locate the directory element and re-write it
+
+	xor	A
+	ld	(lret),a
+	ld	(dcnt),a
+	ld	(dcnt+1),a	
+	call	nowrite
+	ret	nz		;skip close if r/o disk
+
+;check file write flag - 0 indicates written
+	call	getmodnum	;fcb(modnum) in A
+	and	fwfmsk
+	ret	nz		;return if bit remains set
+
+	call	SEARCH$NAMLEN
+	ret	z		;return if not found
+
+;merge the disk map at info with that at buff(dptr)
+
+	ld	bc,dskmap
+	call	getdptra
+	add	hl,bc
+	ex	de,hl		;DE is .buff(dptr+16)
+	ld	hl,(info)
+	add	hl,bc		;DE=.buff(dptr+16), HL=.fcb(16)
+	ld	C,fcblen-dskmap	;length of single byte dm
+
+merge0:
+
+	ld	a,(single)
+	or	A
+	jr	z,merged	;skip to double
+
+;this is a single byte map
+;if fcb(i) = 0 then fcb(i) = buff(i)
+;if buff(i) = 0 then buff(i) = fcb(i)
+;if fcb(i) <> buff(i) then error
+
+	ld	A,(hl)
+	or	A
+	ld	a,(de)
+	jr	nz,fcbnzero
+
+;fcb(i) = 0
+
+	ld	(hl),A	;fcb(i) = buff(i)
+
+fcbnzero:
+
+	or	A
+	jr	nz,buffnzero
+
+;buff(i) = 0
+
+	ld	A,(hl)
+	ld	(de),a		;buff(i)=fcb(i)
+
+buffnzero:
+
+	cp	(hl)
+	jr	nz,mergerr	;fcb(i) = buff(i)?
+	jr	dmset		;if merge ok
+
+merged:
+;this is a double byte merge operation
+
+	call	mergezero	;buff = fcb if buff 0000
+	ex	de,hl
+	call	mergezero
+	ex	de,hl		;fcb = buff if fcb 0000
+
+;they should be identical at this point
+
+	ld	a,(de)
+	cp	(hl)
+	jr	nz,mergerr	;low same?
+	inc	de
+	inc	hl		;to high byte
+	ld	a,(de)
+	cp	(hl)
+	jr	nz,mergerr	;high same?
+
+;merge operation ok for this pair
+
+	dec	C		;extra count for double byte
+
+dmset:
+
+	inc	de
+	inc	hl		;to next byte position
+	dec	C
+	jr	nz,merge0	;for more
+
+;end of disk map merge, check record count
+;DE = .buff(dptr)+32, HL = .fcb(32)
+
+	ld	bc,-(fcblen-extnum)
+	add	hl,bc
+	ex	de,hl
+	add	hl,bc
+
+;DE = .fcb(extnum), HL = .buff(dptr+extnum)
+
+	ld	a,(de)		;current user extent number
+
+;if fcb(ext) >= buff(fcb) then
+;buff(ext) := fcb(ext), buff(rec) := fcb(rec)
+
+	cp	(hl)
+	jr	c,endmerge
+
+;fcb extent number >= dir extent number
+	
+	ld	(hl),A		;buff(ext) = fcb(ext)
+
+;update directory record count field
+
+	ld	bc,reccnt-extnum
+	add	hl,bc
+	ex	de,hl
+	add	hl,bc
+
+;DE=.buff(reccnt), HL=.fcb(reccnt)
+
+	ld	A,(hl)
+	ld	(de),a		;buff(reccnt)=fcb(reccnt)
+
+endmerge:
+
+	ld	A,true
+	ld	(fcb$copied),a	;mark as copied
+	ld	C,1
+	call	SCANDM$B
+	call	SETFWF
+	jp	seek$copy	;ok to "wrdir" here - 1.4 compat
+	;ret
+
+mergerr:
+;elements did not merge correctly
+
+	ld	hl,lret
+	dec	(hl)		;=255 non zero flag set
+	ret
+
+make:
+;create a new file by creating a directory entry
+;then opening the file
+
+	call	check$write	;may be write protected
+	ld	hl,(info)
+	push	hl		;save fcb address, look for e5
+	ld	hl,efcb
+	ld	(info),hl	;info = .empty
+	ld	C,1
+	call	search		;length 1 match on empty entry
+	pop	hl		;recall info address
+	ld	(info),hl	;in case we return here
+	ret	z		;return with error condition 255 if not found
+	ex	de,hl		;DE = info address
+
+;clear the remainder of the fcb
+
+	ld	hl,namlen
+	add	hl,de		;HL=.fcb(namlen)
+	ld	C,fcblen-namlen	;number of bytes to fill
+	xor	A		;clear accumulator to 00 for fill
+
+make0:
+
+	ld	(hl),A
+	inc	hl
+	dec	C
+	jr	nz,make0
+	ld	hl,ubytes
+	add	hl,de		;HL = .fcb(ubytes)
+	ld	(hl),A		;fcb(ubytes) = 0
+	call	setcdr		;may have extended the directory
+
+;now copy entry to the directory
+
+	call	copy$fcb
+
+;and set the file write flag to "1"
+
+	jp	setfwf
+	;ret
+
+open$reel:
+;close the current extent, and open the next one
+;if possible.  RMF is true if in read mode
+
+	xor	A
+	ld	(fcb$copied),a	;set true if actually copied
+	call	close		;close current extent
+
+;lret remains at enddir if we cannot open the next ext
+
+	ld	a,(LRET)
+	inc	A
+	ret	z		;return if end
+
+;increment extent number
+
+	ld	hl,(info)
+	ld	bc,extnum
+	add	hl,bc		;HL=.fcb(extnum)
+	ld	A,(hl)
+	inc	A
+	and	maxext
+	ld	(hl),A		;fcb(extnum)=++1
+	jr	z,open$mod	;move to next module if zero
+
+;may be in the same extent group
+
+	ld	B,A
+	ld	a,(extmsk)
+	and	B
+
+;if result is zero, then not in the same group
+
+	ld	hl,fcb$copied	;true if the fcb was copied to directory
+	and	(hl)		;produces a 00 in accumulator if not written
+	jr	z,open$reel0	;go to next physical extent
+
+;result is non zero, so we must be in same logical ext
+
+	jr	open$reel1	;to copy fcb information
+
+open$mod:
+;extent number overflow, go to next module
+
+	ld	bc,modnum-extnum
+	add	hl,bc		;HL=.fcb(modnum)
+	inc	(hl)		;fcb(modnum)=++1
+
+;module number incremented, check for overflow
+
+	ld	A,(hl)
+	and	maxmod		;mask high order bits
+	jr	z,open$r$err	;cannot overflow to zero
+
+;otherwise, ok to continue with new module
+open$reel0:
+
+	call	SEARCH$NAMLEN	;next extent found?
+	jr	nz,OPEN$REEL1
+
+;end of file encountered
+
+	ld	a,(rmf)
+	inc	A		;0ffh becomes 00 if read
+	jr	z,open$r$err	;sets lret = 1
+
+;try to extend the current file
+
+	call	make
+
+;cannot be end of directory
+
+	call	end$of$dir
+	jr	z,open$r$err	;with lret = 1
+
+	jr	open$reel2
+
+open$reel1:
+;not end of file, open
+
+	call	open$copy
+
+open$reel2:
+
+	call	getfcb		;set parameters
+	xor	A
+	jp	sta$ret		;ret with lret = 0
+
+open$r$err:
+;cannot move to next extent of this file
+
+	call	setlret1	;lret = 1
+	jp	setfwf		;ensure that it will not be closed
+	;ret
+
+seqdiskread:
+
+	call	RESELECTX
+
+diskread:			;(may enter from seqdiskread)
+
+	ld	A,true
+	ld	(rmf),a		;read mode flag = true (open$reel)
+
+;read the next record from the current fcb
+
+	call	getfcb		;sets parameters for the read
+	ld	a,(vrecord)
+	ld	hl,rcount
+	cp	(hl)		;vrecord-rcount
+
+;skip if rcount > vrecord
+
+	jr	c,recordok
+
+;not enough records in the extent
+;record count must be 128 to continue
+
+	cp	128		;vrecord = 128?
+	jr	nz,diskeof	;skip if vrecord<>128
+
+	call	open$reel	;go to next extent if so
+	xor	A
+	ld	(vrecord),a	;vrecord=00
+
+
+;now check for open ok
+
+	ld	a,(lret)
+	or	A
+	jr	nz,diskeof	;stop at eof
+
+recordok:
+;arrive with fcb addressing a record to read
+
+	call	index
+
+;error 2 if reading unwritten data
+;(returns 1 to be compatible with 1.4)
+
+	jr	z,diskeof
+
+;record has been allocated, read it
+
+	call	atran		;arecord now a disk address
+	call	seek		;to proper track,sector
+	call	rdbuff		;to dma address
+	jp	setfcb		;replace parameter
+	;ret
+
+diskeof:
+
+	jp	setlret1	;lret = 1
+	;ret
+
+seqdiskwrite:
+
+	call	RESELECTX
+
+diskwrite:			;(may enter here from seqdiskwrite above)
+
+	ld	A,false
+	ld	(rmf),a		;read mode flag
+
+;write record to currently selected file
+
+	call	check$write	;in case write protected
+	ld	hl,(info)	;HL = .fcb(0)
+	call	check$rofile	;may be a read-only file
+	call	GETMODNUM
+	and	40H
+	jp	nz,ROF$ERROR
+	call	getfcb		;to set local parameters
+	ld	a,(vrecord)
+	cp	lstrec+1	;vrecord-128
+
+;skip if vrecord > lstrec
+;vrecord = 128, cannot open next extent
+	jp	nc,setlret1	;lret=1		
+
+diskwr0:
+;can write the next record, so continue
+
+	call	index
+	ld	C,0		;marked as normal write operation for wrbuff
+	jr	nz,diskwr1
+
+;not allocated
+;the argument to getblock is the starting
+;position for the disk search, and should be
+;the last allocated block for this file, or
+;the value 0 if no space has been allocated
+
+	call	dm$position
+	ld	(dminx),a	;save for later
+	ld	bc,0000h	;may use block zero
+	or	A
+	jr	z,nopblock	;skip if no previous block
+
+;previous block exists at A
+
+	ld	C,A
+	dec	bc		;previous block # in BC
+	call	getdm		;previous block # to HL
+	ld	B,H
+	ld	C,L		;BC=prev block#
+
+nopblock:
+;BC = 0000, or previous block #
+
+	call	get$block	;block # to HL
+
+;arrive here with block# or zero
+
+	ld	A,L
+	or	H
+	jr	nz,blockok
+
+;cannot find a block to allocate
+
+	ld	A,2
+	jp	sta$ret		;lret=2
+
+blockok:
+;allocated block number is in HL
+
+	ld	(arecord),hl
+	ex	de,hl		;block number to DE
+	ld	hl,(info)
+	ld	bc,dskmap
+	add	hl,bc		;HL=.fcb(dskmap)
+	ld	a,(single)
+	or	A		;set flags for single byte dm
+	ld	a,(dminx)	;recall dm index
+	jr	z,allocwd	;skip if allocating word
+
+;allocating a byte value
+
+	call	addh
+	ld	(hl),E		;single byte alloc
+	jr	diskwru		;to continue
+
+allocwd:
+;allocate a word value
+
+	ld	C,A
+	ld	B,0		;double(dminx)
+	add	hl,bc
+	add	hl,bc		;HL=.fcb(dminx*2)
+	ld	(hl),E
+	inc	hl
+	ld	(hl),D		;double wd
+
+diskwru:
+;disk write to previously unallocated block
+
+	ld	C,2		;marked as unallocated write
+
+diskwr1:
+;continue the write operation if no allocation error
+;C = 0 if normal write, 2 if to prev unalloc block
+
+	ld	a,(lret)
+	or	A
+	ret	nz		;stop if non zero returned value
+	push	bc		;save write flag
+	call	atran		;arecord set
+	ld	a,(FX)
+	cp	40
+	jr	nz,diskwr11	
+	pop	bc
+	push	bc
+	ld	A,C
+	dec	A
+	dec	A	
+	jr	nz,diskwr11	;old allocation
+	push	hl		;arecord in hl ret from atran
+	ld	hl,(buffa)
+	ld	D,A		;zero buffa & fill
+
+fill0:	
+
+	ld	(hl),A
+	inc	hl
+	inc	D
+	jp	p,fill0	
+	call	setdir
+	ld	hl,(arecord1)	
+	ld	C,2	
+
+fill1:	
+
+	ld	(arecord),hl
+	push	bc
+	call	seek
+	pop	bc	
+	call	wrbuff		;write fill record	
+	ld	hl,(arecord)
+
+;restore last record
+
+	ld	C,0		;change  allocate flag
+	ld	a,(blkmsk)
+	ld	B,A
+	and	L
+	cp	B
+	inc	hl	
+	jr	nz,fill1	;cont until cluster is zeroed
+	pop	hl
+	ld	(arecord),hl
+	call	setdata
+	call	SEEK
+	jr	DISKWR12
+
+diskwr11:
+
+	call	seek		;to proper file position
+	pop	bc
+	push	bc		;restore/save write flag (C=2 if new block)
+	ld	a,(ARECORD)
+	ld	hl,BLKMSK
+	and	(hl)
+	jr	z,DISKWR13
+
+DISKWR12:
+
+	ld	C,0
+
+DISKWR13:
+
+	call	wrbuff		;written to disk
+	pop	bc		;C = 2 if a new block was allocated, 0 if not
+
+;increment record count if rcount<=vrecord
+
+	ld	a,(vrecord)
+	ld	hl,rcount
+	cp	(hl)		;vrecord-rcount
+	jr	c,diskwr2
+
+;rcount <= vrecord
+
+	ld	(hl),A
+	inc	(hl)		;rcount = vrecord+1
+	ld	C,2		;mark as record count incremented
+
+diskwr2:
+;A has vrecord, C=2 if new block or new record#
+
+	dec	C
+	dec	C
+	jr	nz,noupdate
+	push	af		;save vrecord value
+	call	getmodnum	;HL=.fcb(modnum), A=fcb(modnum)
+
+;reset the file write flag to mark as written fcb
+
+	and	(not fwfmsk) and 0ffh	;bit reset
+	ld	(hl),A		;fcb(modnum) = fcb(modnum) and 7fh
+	pop	af		;restore vrecord
+
+noupdate:
+;check for end of extent, if found attempt to open
+;next extent in preparation for next write
+
+	cp	lstrec		;vrecord=lstrec?
+	jr	nz,diskwr3	;skip if not
+
+;may be random access write, if so we are done
+;change next
+
+	ld	a,(FX)
+	cp	22
+	jr	nc,DISKWR3	;skip next extent open op
+
+;update current fcb before going to next extent
+
+	call	setfcb
+	call	open$reel	;rmf=false
+
+;vrecord remains at lstrec causing eof if
+;no more directory space is available
+
+	ld	hl,lret
+	ld	A,(hl)
+	or	A
+	jr	nz,nospace
+
+;space available, set vrecord=255
+	dec	A
+	ld	(vrecord),a	;goes to 00 next time
+
+nospace:
+
+	ld	(hl),0		;lret = 00 for returned value
+
+diskwr3:
+
+	jp	setfcb		;replace parameters
+	;ret
+
+rseek:
+;random access seek operation, C=0ffh if read mode
+;fcb is assumed to address an active file control block
+;(MODNUM HAS BEEN SET TO 1010$0000b IF PREVIOUS BAD SEEK)
+
+	push	bc		;save r/w flag
+	ld	de,(info)	;DE will hold base of fcb
+	ld	hl,ranrec
+	add	hl,de		;HL=.fcb(ranrec)
+	ld	A,(hl)
+	and	7fh
+	push	af		;record number
+	ld	A,(hl)
+	rla			;cy=lsb of extent#
+	inc	hl
+	ld	A,(hl)
+	rla
+	and	11111b		;A=ext#
+	ld	C,A		;C holds extent number, record stacked
+	ld	A,(hl)
+	rra
+	rra
+	rra
+	rra
+	and	1111b		;mod#
+	ld	B,A		;B holds module#, C holds ext#
+	pop	af		;recall sought record #
+
+;check to insure that high byte of ran rec = 00
+
+	inc	hl
+	ld	L,(hl)		;l=high byte (must be 00)
+	inc	L
+	dec	L
+	ld	L,6		;zero flag, l=6
+
+;produce error 6, seek past physical eod
+
+	jr	nz,seekerr
+
+;otherwise, high byte = 0, A = sought record
+
+	ld	hl,nxtrec
+	add	hl,de		;HL = .fcb(nxtrec)
+	ld	(hl),A		;sought rec# stored away
+
+;arrive here with B=mod#, C=ext#, DE=.fcb, rec stored
+;the r/w flag is still stacked.  compare fcb values
+
+	ld	hl,extnum
+	add	hl,de
+	ld	A,C		;A=seek ext#
+	sub	(hl)
+	jr	nz,ranclose	;tests for = extents
+
+;extents match, check mod#
+
+	ld	hl,modnum
+	add	hl,de
+	ld	A,B		;B=seek mod#
+
+;could be overflow at eof, producing module#
+;of 90H or 10H, so compare all but fwf
+
+	sub	(hl)
+	and	3FH
+	jr	z,seekok	;same?
+
+ranclose:
+
+	push	bc
+	push	de		;save seek mod#,ext#, .fcb
+	call	close		;current extent closed
+	pop	de
+	pop	bc		;recall parameters and fill
+	ld	L,3		;cannot close error #3
+	ld	a,(lret)
+	inc	A
+	jr	z,badseek
+	ld	hl,extnum
+	add	hl,de
+	ld	(hl),C		;fcb(extnum)=ext#
+	ld	hl,modnum
+	add	hl,de
+	ld	(hl),B		;fcb(modnum)=mod#
+	call	open		;is the file present?
+	ld	a,(lret)
+	inc	A
+	jr	nz,seekok	;open successful?
+
+;cannot open the file, read mode?
+
+	pop	bc		;r/w flag to c (=0ffh if read)
+	push	bc		;everyone expects this item stacked
+	ld	L,4		;seek to unwritten extent #4
+	inc	C		;becomes 00 if read operation
+	jr	z,badseek	;skip to error if read operation
+
+;write operation, make new extent
+
+	call	make
+	ld	L,5		;cannot create new extent #5
+	ld	a,(lret)
+	inc	A
+	jr	z,badseek	;no dir space
+
+;file make operation successful
+seekok:
+
+	pop	bc		;discard r/w flag
+	xor	A
+	jp	sta$ret		;with zero set
+
+badseek:
+;fcb no longer contains a valid fcb, mark
+;with 1010$00000B IN MODNUM FIELD so that it
+;appears as overflow with file write flag set
+
+	push	hl		;save error flag
+	call	getmodnum	;HL = .modnum
+	ld	(hl),10100000B
+	pop	hl		;and drop through
+
+seekerr:
+
+	pop	bc		;discard r/w flag
+	ld	A,L
+	ld	(lret),a	;lret=#, nonzero
+
+;setfwf returns non-zero accumulator for err
+
+	jp	setfwf		;flag set, so subsequent close ok
+	;ret
+
+randiskread:
+;random disk read operation
+
+	call	RESELECTX
+	ld	C,true		;marked as read operation
+	call	rseek
+	call	z,diskread	;if seek successful
+	ret
+
+randiskwrite:
+;random disk write operation
+
+	call	RESELECTX
+	ld	C,false		;marked as write operation
+	call	rseek
+	call	z,diskwrite	;if seek successful
+	ret
+
+compute$rr:
+;compute random record position for getfilesize/setrandom
+
+	ex	de,hl
+	add	hl,de
+
+;DE=.buf(dptr) or .fcb(0), HL = .f(nxtrec/reccnt)
+
+	ld	C,(hl)
+	ld	B,0		;BC = 0000 0000 ?rrr rrrr
+	ld	hl,extnum
+	add	hl,de
+	ld	A,(hl)
+	rrca
+	and	80h		;A=e000 0000
+	add	a,C
+	ld	C,A
+	ld	A,0
+	adc	a,B
+	ld	B,A
+
+;BC = 0000 000? errrr rrrr
+
+ 	ld	A,(hl)
+ 	rrca
+	and	0fh
+	add	a,B
+	ld	B,A
+
+;BC = 000? eeee errrr rrrr
+
+	ld	hl,modnum
+	add	hl,de
+	ld	A,(hl)		;A=XXX? mmmm
+	add	a,A
+	add	a,A
+	add	a,A
+	add	a,A		;cy=? A=mmmm 0000
+	push	af
+	add	a,B
+	ld	B,A
+
+;cy=?, BC = mmmm eeee errr rrrr
+
+	push	af		;possible second carry
+	pop	hl		;cy = lsb of L
+	ld	A,L		;cy = lsb of A
+	pop	hl		;cy = lsb of L
+	or	L		;cy/cy = lsb of A
+	and	1		;A = 0000 000? possible carry-out
+	ret
+
+getfilesize:
+;compute logical file size for current fcb
+;zero the receiving ranrec field
+
+	call	RESELECT
+	ld	hl,(info)
+	ld	de,ranrec
+	add	hl,de
+	push	hl		;save position
+	ld	(hl),D
+	inc	hl
+	ld	(hl),D
+	inc	hl
+	ld	(hl),D		;=00 00 00
+	call	SEARCH$EXTNUM
+
+getsize:
+
+	jr	z,SETSIZE
+
+;current fcb addressed by dptr
+
+	call	getdptra
+	ld	de,reccnt	;ready for compute size
+	call	compute$rr
+
+;A=0000 000? BC = mmmm eeee errr rrrr
+;compare with memory, larger?
+
+	pop	hl
+	push	hl		;recall, replace .fcb(ranrec)
+	ld	E,A		;save cy
+	ld	A,C
+	sub	(hl)
+	inc	hl		;ls byte
+	ld	A,B
+	sbc	a,(hl)
+	inc	hl		;middle byte
+	ld	A,E
+	sbc	a,(hl)		;carry if .fcb(ranrec) > directory
+	jr	c,getnextsize	;for another try
+
+;fcb is less or equal, fill from directory
+
+	ld	(hl),E
+	dec	hl
+	ld	(hl),B
+	dec	hl
+	ld	(hl),C
+
+getnextsize:
+
+	call	searchn
+	jr	getsize
+
+setsize:
+
+	pop	hl		;discard .fcb(ranrec)
+	ret
+
+setrandom:
+;set random record from the current file control block
+
+	ld	hl,(info)
+	ld	de,nxtrec	;ready params for computesize
+	call	compute$rr	;DE=info, A=cy, BC=mmmm eeee errr rrrr
+	ld	hl,ranrec
+	add	hl,de		;HL = .fcb(ranrec)
+	ld	(hl),C
+	inc	hl
+	ld	(hl),B
+	inc	hl
+	ld	(hl),A		;to ranrec
+	ret
+
+TMPSELECT:
+
+	ld	hl,SELDSK
+	ld	(hl),E
+
+CURSELECT:
+
+	ld	a,(SELDSK)
+	ld	hl,CURDSK
+	cp	(hl)
+	jr	nz,SELECT
+	cp	0FFH
+	ret	nz
+
+select:
+;select disk info for subsequent input or output ops
+
+	ld	(hl),A
+	ld	D,A
+	ld	hl,(DLOG)
+	call	TEST$VECTOR
+	ld	E,A
+	push	de
+	call	selectdisk
+	pop	hl		;recall dlog vector
+	jp	nc,SEL$ERROR	;returns with CARRY SET if select ok
+
+;is the disk logged in?
+
+	dec	L
+	ret	z		;return if bit is set
+
+;disk not logged in, set bit and initialize
+
+	call	INITIALIZE
+	ld	hl,(LSN$ADD)
+	ld	A,(hl)
+	and	1
+	push	af
+	add	a,(hl)
+	ld	(hl),A
+	pop	af
+	call	nz,SET$RLOG
+	jp	SET$DLOG
+	;ret
+
+RESELECTX:
+
+	ld	hl,CHECK$FCB
+	push	hl
+
+reselect:
+;check current fcb to see if reselection necessary
+
+	ld	A,true
+	ld	(resel),a	;mark possible reselect
+	ld	hl,(info)
+	ld	A,(hl)		;drive select code
+	ld	(FCBDSK),a
+	and	11111b		;non zero is auto drive select
+	dec	A		;drive code normalized to 0..30, or 255
+	jp	m,noselect	;			SCC	22 Apr 84
+
+	ld	(SELDSK),a
+
+noselect:
+
+	call	CURSELECT
+
+;set user code
+
+	ld	a,(usrcode)	;0...15
+	ld	hl,(info)
+	ld	(hl),A
+
+NOSELECT0:
+
+	call	TST$LOG$FXS
+	ret	nz
+	call	FUNC48
+
+NOSELECT1:
+
+	ld	C,0FFH
+	jp	?discd
+
+subttl	Individual Function Handlers
+func12:
+;return version number
+
+	ld	A,dvers
+	jp	sta$ret		;lret = dvers (high = 00)
+	;ret 			;jmp goback
+page
+func13:
+;reset disk system - initialize to disk 0
+
+	ld	hl,0
+	ld	(rodsk),hl
+	ld	(dlog),hl
+	xor	A
+	ld	(ACTDSK),a
+	dec	A
+	ld	(CURDSK),a
+
+;note that usrcode remains unchanged
+
+	ld	hl,tbuff
+	ld	(dmaad),hl	;dmaad = tbuff
+	call	SETDATA		;to data dma address
+	jr	NOSELECT1
+	;ret 			;jmp goback
+page
+FUNC14:
+
+	call	TMPSELECT
+	ld	a,(SELDSK)
+	ld	(ACTDSK),a
+	ret
+
+page
+func15:
+;open file
+
+	call	clrmodnum	;clear the module number
+	call	reselect
+	call	OPEN
+	call	OPENX
+	ld	a,(DIRLOC)
+	inc	A
+	ret	z
+	ld	hl,(SDCNT)
+	ld	A,L
+	and	0FCH
+	ld	L,A
+	dec	hl
+	ld	(DCNT),hl
+	ld	hl,(INFO)
+	ld	(hl),0
+	call	SEARCHN
+	call	OPEN1
+	call	OPENX
+	ret
+
+OPENX:
+
+	call	END$OF$DIR
+	ret	z
+	pop	hl
+	ld	a,(USRCODE)
+	ld	hl,(INFO)
+	cp	(hl)
+	jr	z,OPENX1
+
+	ld	de,10		;test file attribute t2'
+	add	hl,de		;for sys | dir status
+	ld	A,(hl)
+	and	80H
+	jr	nz,openx2	;system, allow open	SCC	22 Apr 84
+
+	inc	hl		;bump ptr to ext field	SCC	22 Apr 84
+	inc	hl		;			SCC	22 Apr 84
+	ld	(hl),a		;zero remainder of FCB	SCC	22 Apr 84
+	ld	d,h		;			SCC	22 Apr 84
+	ld	e,l		;			SCC	22 Apr 84
+	inc	de		;			SCC	22 Apr 84
+	ld	bc,19		;			SCC	22 Apr 84
+	ldir			;			SCC	22 Apr 84
+	jp	lret$eq$FF	;flag open failure	SCC	22 Apr 84
+
+openx2:				;			SCC	22 Apr 84
+	ld	de,4
+	add	hl,de
+	ld	A,(hl)
+	or	40H
+	ld	(hl),A
+
+OPENX1:
+
+	ld	de,OLOG
+	call	SET$CDISK
+	jp	SET$LSN
+	;ret 			;jmp goback
+page
+func16:
+;close file
+
+	call	reselect
+	call	CLOSE
+	jp	SET$LSN
+	;ret ;jmp goback
+page
+func17:
+;search for first occurence of a file
+
+	ex	de,hl
+	xor	A
+
+CSEARCH:
+
+	push	af
+	ld	A,(hl)
+	cp	'?'
+	jr	nz,CSEARCH1
+	call	CURSELECT
+	call	NOSELECT0
+	ld	C,0
+	jr	CSEARCH2
+
+CSEARCH1:
+
+	call	GETEXTA
+	ld	A,(hl)
+	cp	'?'
+	call	nz,CLRMODNUM
+	call	RESELECT
+	ld	C,NAMLEN
+
+CSEARCH2:
+
+	pop	af
+	ld	hl,DIR$TO$USER
+	push	hl
+	jp	z,SEARCH
+	jp	SEARCHN
+page
+
+func18:
+;search for next occurence of a file
+
+	ld	hl,(SEARCHA)
+	ld	(INFO),hl
+	or	1
+	jr	CSEARCH
+page
+FUNC19	equ	DELETE
+;delete a file
+
+FUNC20	equ	SEQDISKREAD
+;read a file
+
+FUNC21	equ	SEQDISKWRITE
+;write a file
+page
+
+func22:
+;make a file
+
+	call	clrmodnum
+ 	call	reselect
+	call	MAKE
+	jr	OPENX1
+	;ret ;jmp goback
+
+FUNC23	equ	RENAME
+;rename a file
+
+func24:
+;return the login vector
+
+	ld	hl,(dlog)
+	jr	sthl$ret
+	;ret ;jmp goback
+
+func25:
+;return selected disk number
+
+	ld	a,(SELDSK)
+	jp	sta$ret
+	;ret ;jmp goback
+
+func26:
+;set the subsequent dma address to info
+
+	ex	de,hl		;was lhld info
+	ld	(dmaad),hl	;dmaad = info
+	jp	setdata		;to data dma address
+	;ret ;jmp goback
+
+func27:
+;return the login vector address
+
+	call	CURSELECT
+	ld	hl,(alloca)
+	jr	sthl$ret
+	;ret 			;jmp goback
+
+func28	equ	set$ro
+;write protect current disk
+
+	;ret 			;jmp goback
+
+func29:
+;return r/o bit vector
+
+	ld	hl,(rodsk)
+	jr	sthl$ret
+	;ret 			;jmp goback
+
+FUNC30	equ	INDICATORS
+;set file indicators
+
+func31:
+;return address of disk parameter block
+
+	call	CURSELECT
+	ld	hl,(dpbaddr)
+
+sthl$ret:
+
+	ld	(aret),hl
+	ret	;jmp goback
+
+func32:
+;GET/SET USER CODE
+
+	ld	hl,USRCODE
+
+;DOES REG E = FFH?
+
+	ld	A,E
+	inc	A
+	ld	A,(hl)
+	jp	z,STA$RET	; YES - RETURN USER
+
+;SET USER NUMBER
+
+	ld	A,E
+	and	0FH
+	ld	(hl),A
+	ret
+
+FUNC33	equ	RANDISKREAD
+;random disk read operation
+
+FUNC34	equ	RANDISKWRITE
+;random disk write operation
+
+FUNC35	equ	GETFILESIZE
+;return file size (0-65536)
+
+func36	equ	setrandom
+;set random record
+	;ret 			;jmp goback
+
+func37:
+;drive reset
+
+	ex	de,hl
+
+RESET37X:
+
+	push	hl
+	ld	A,L
+	cpl
+	ld	E,A
+	ld	A,H
+	cpl
+	ld	hl,(dlog)
+	and	H
+	ld	D,A
+	ld	A,L
+	and	E
+	ld	E,A
+	ld	hl,(rodsk)
+	ex	de,hl	
+	ld	(dlog),hl
+	ld	A,L
+	and	E
+	ld	L,A
+	ld	A,H
+	and	D
+	ld	H,A
+	ld	(rodsk),hl
+	ld	A,0FFH
+	ld	(CURDSK),a
+	ld	(SCAN$FLAG),a
+	pop	hl
+	jp	SD$0
+
+func38	equ	func$ret
+
+func39	equ	func$ret
+
+FUNC40	equ	RANDISKWRITE
+
+FUNC45:
+;SET BDOS ERROR MODE
+
+	ld	A,E
+	ld	(ERRMODE),a
+	ret
+
+FUNC48:
+;FLUSH BUFFERS
+
+	call	?flush
+	jp	DIOCOMP
+subttl BDOS call termination
+
+GOBACK0:
+
+	ld	hl,0FFFFH
+	ld	(ARET),hl
+
+goback:
+;arrive here at end of processing to return to user
+
+	ld	a,(resel)
+	or	A
+	jr	z,retmon
+
+;reselection may have taken place
+
+	ld	hl,(INFO)
+	ld	a,(FCBDSK)
+	ld	(hl),A
+
+;return from the disk monitor
+retmon:
+
+	ld	sp,(entsp)	;user stack restored
+	ld	hl,(aret)
+	ld	A,L
+	ld	B,H		;BA = HL = aret
+	ret
+subttl Initialized Data Areas
+
+efcb:
+
+	defb	empty		;0e5=available dir entry
+
+LOG$FXS:
+
+	defb	15,16,17,19,22,23,30,35,0
+
+RW$FXS:
+
+	defb	20,21,33,34,40,0
+
+SC$FXS:
+
+	defb	16,18
+subttl	CPMERR - console error message routine
+;*****************************************************************
+;*****************************************************************
+;**                                                             **
+;**                   S I M P L E   C P / M                     **
+;**                                                             **
+;**         S t a n d a r d   E r r o r   R o u t i n e         **
+;**                                                             **
+;*****************************************************************
+;*****************************************************************
+
+cpmerr:	; c = error #
+
+	ld	B,0
+	dec	C
+	ld	hl,errtbl
+	add	hl,bc
+	add	hl,bc
+	ld	E,(hl)
+	inc	hl
+	ld	D,(hl)
+
+;stack message address, advance to new line
+	push	de
+	call	crlf
+
+;print error prefix
+	ld	bc,dskmsg
+	call	print
+
+;identify drive
+	ld	a,(seldsk)
+	add	a,'A'
+	ld	C,A
+	call	conout
+
+;print colon and space
+	ld	bc,colon
+	call	print
+
+;print error message tail
+	pop	bc
+	jp	print
+
+errtbl:	defw	permsg,rodmsg,rofmsg,selmsg
+
+dskmsg:	defb	'CP/M Error On $'
+colon:	defb	': $'
+permsg:	defb	'Disk I/O$'
+selmsg:	defb	'Invalid Drive$'
+rofmsg:	defb	'Read/Only File$'
+rodmsg:	defb	'Read/Only Disk$'
+
+;------------------------------------------------------------------------------
+
+subttl	Data Segment
+
+	if	standard
+	dseg
+	endif
+
+	public	DLOG
+	public	RODSK
+	public	FX
+	public	ERRMODE
+	public	LISTCP
+	public	KBCHAR
+	public	SUB$FLAG
+	public	INFO
+	public	ARET
+	public	ARECORD
+	public	SELDSK
+	public	CONMODE
+	public	out$delim
+
+BDOS$DT	equ	$
+
+	if	data_low
+?bdos	equ	$+6
+	defs	front_size
+	endif
+
+dlog:	defs	WORD	;logged-in disks
+rodsk:	defs	WORD	;read only disk vector
+dmaad:	defs	WORD	;initial dma address
+
+;
+;	curtrka - alloca are set upon disk select
+;	(data must be adjacent, do not insert variables)
+;	(address of translate vector, not used)
+;
+
+cdrmaxa:	defs	word	;pointer to cur dir max value
+curtrka:	defs	word	;current track address
+curreca:	defs	word	;current record address
+buffa:		defs	word	;pointer to directory dma address
+dpbaddr:	defs	word	;current disk parameter block address
+checka:		defs	word	;current checksum vector address
+alloca:		defs	word	;current allocation vector address
+
+addlist	equ	$-buffa	;address list size
+
+;
+;	sectpt - offset obtained from disk parm block at dpbaddr
+;	(data must be adjacent, do not insert variables)
+;
+
+sectpt:		defs	word	;sectors per track
+blkshf:		defs	byte	;block shift factor
+blkmsk:		defs	byte	;block mask
+extmsk:		defs	byte	;extent mask
+maxall:		defs	word	;maximum allocation number
+dirmax:		defs	word	;largest directory number
+dirblk:		defs	word	;reserved allocation bits for directory
+chksiz:		defs	word	;size of checksum vector
+offset:		defs	word	;offset tracks at beginning
+
+dpblist		equ	$-sectpt	;size of area
+
+;
+;	local variables
+;
+
+tranv:		defs	word	;address of translate vector
+fcb$copied:	defs	byte	;set true if copy$fcb called
+rmf:		defs	byte	;read mode flag for open$reel
+dirloc:		defs	byte	;directory flag in rename, etc.
+dminx:		defs	byte	;local for diskwrite
+searchl:	defs	byte	;search length
+searcha:	defs	word	;search address
+single:		defs	byte	;set true if single byte allocation map
+fcbdsk:		defs	byte	;disk named in fcb
+rcount:		defs	byte	;record count in current fcb
+extval:		defs	byte	;extent number and extmsk
+vrecord:	defs	BYTE	;current virtual record
+arecord:	defs	word	;current actual record
+arecord1:	defs	word	;current actual block# * blkmsk
+
+;
+;	local variables for directory access
+;
+
+dptr:		defs	byte	;directory pointer 0,1,2,3
+dcnt:		defs	word	;directory counter 0,1,...,dirmax
+
+entsp:		defs	word	;entry stack pointer
+		defs	ssize*2	;stack size
+
+lstack:
+
+info:		defs	word	;information address
+aret:		defs	word	;address value to return
+lret		equ	aret	;low(aret)
+
+; RESEL & RELOG ARE INITIALIZED AS A PAIR AT BDOS ENTRY
+
+resel:		defs	byte	;reselection flag
+RELOG:		defs	BYTE	;RELOG DRIVE SWITCH
+save$pos:	defs	BYTE	;SAVE BEGINNING FUNCTION 10 BUFF POS
+LSN$ADD:	defs	WORD	;LOGIN SEQ # ADDRESS
+LSN$NS:		defs	16	;LOGIN SEQUENCE #S (1 PER DRIVE)
+SDCNT:		defs	WORD	;SAVE USER 0 DCNT FOR OPEN FX
+
+USER0$SEARCH:	defs	WORD	;USER 0 SEARCH FLAG FOR OPEN FX
+CURDSK:		defs	BYTE	;CURRENT DISK NUMBER
+ACTDSK:		defs	BYTE	;ACTUAL SELECTED DISK NUMBER
+SELDSK:		defs	BYTE	;CURRENTLY SELECTED DISK NUMBER
+
+OUT$DELIM:	defs	BYTE	;FUNCTION 9 (PRINT) DELIMITER
+
+; The following two variables are set to zero by the
+; CCP prior to passing control to a loaded transient program.
+
+OLOG:		defs	WORD	;FILE OPEN DRIVE VECTOR
+RLOG:		defs	WORD	;MEDIA CHANGE DRIVE VECTOR
+subttl	Reinitialized data
+
+; The following variables are initialized to zero by the BDOS
+; warm start initialization routine (WS$INIT) and the
+; cold start initialization routine (CS$INIT)
+
+column:		defs	byte	;column position
+usrcode:	defs	byte	;current user number
+kbchar:		defs	byte	;initial key char = 00
+compcol:	defs	byte	;true if computing column position
+strtcol:	defs	byte	;starting column position after read
+
+FX:		defs	BYTE	;CURRENT BDOS FUNCTION NUMBER
+ERRMODE:	defs	BYTE	;BDOS ERROR MODE (NORMAL,RETURN,RET & DISPLAY)
+SCAN$FLAG:	defs	BYTE	;SCAN$DRIVE FLAG (FF=DRIVE RESET,0=WS$INIT)
+CONMODE:	defs	BYTE	;CONSOLE MODE (BIT 2 = RAW OUTPUT, BIT 4 = ESD)
+
+WS$INIT$SIZE	equ	$-COLUMN
+
+
+
+
+
+;
+; The following variables are initialized to zero by the BDOS
+; cold start initialization routine (CS$INIT)
+;
+
+listcp:		defs	byte	;listing toggle
+FX10FLG:	defs	BYTE	;CCP FUNCTION 10 (^C) FLAG
+SUB$FLAG:	defs	BYTE	;SUBMIT FLAG ($$$.SUB FILE ON A)
+SUBWORK:	defs	20	;CCP SUBMIT WORK AREA
+
+CS$INIT$SIZE	equ	$-COLUMN
+
+	cseg		;this code makes the code segment begin on a
+			; page boundry
+LAST:
+	defb	0
+
+	org	(((LAST-BASE)+255) AND 0FF00H) - 1
+	defb	0
+subttl BIOS access constants
+
+BIOS	equ	$
+
+bootf	equ	bios+3*0	;cold boot function
+wbootf	equ	bios+3*1	;warm boot function
+constf	equ	bios+3*2	;console status function
+coninf	equ	bios+3*3	;console input function
+conoutf	equ	bios+3*4	;console output function
+listf	equ	bios+3*5	;list output function
+punchf	equ	bios+3*6	;punch output function
+readerf	equ	bios+3*7	;reader input function
+homef	equ	bios+3*8	;disk home function
+seldskf	equ	bios+3*9	;select disk function
+settrkf	equ	bios+3*10	;set track function
+setsecf	equ	bios+3*11	;set sector function
+setdmaf	equ	bios+3*12	;set dma function
+readf	equ	bios+3*13	;read disk function
+writef	equ	bios+3*14	;write disk function
+liststf	equ	bios+3*15	;list status function
+sectran	equ	bios+3*16	;sector translate
+
+	end	
+
