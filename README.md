@@ -8,7 +8,7 @@ The bedroom Z80 is a Z80-based microcomputer with an advanced I/O system, boot s
 
 - It will be able to recognise a signifigant number of I/O devices. One recognised, the I/O device will be assigned an area of I/O space, and a driver will be loaded to communicate with the device. 
 
-- The graphics system will be more advanced than most homebrew computer projects. It will have a custom TTL logic graphics card that will be able to display 320x200 in 16 colours over VGA.
+- The graphics system will be more advanced than most homebrew computer projects. It will have a custom TTL logic graphics card that will be able to display 320x200 in 256 colours, or 640x400 in 4 shades of grey over VGA. Possible other modes include 320x400 or 640x200 in 16 colours, from the 256 colour palette.
 
 ### Todo:
 
