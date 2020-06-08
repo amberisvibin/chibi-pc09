@@ -10,7 +10,7 @@ The bedroom Z80 will be a Z80-based microcomputer with an advanced I/O system, b
 
 - It will use a full 64k I/O space, using the upper 8 bits as a Device ID and the lower eight bits as a device address. This creates 256 I/O devices with 256 addresses each. This way, the device ID can be left in the upper address register, while the device address register is updated. 
 
-- The graphics system will be more advanced than most homebrew computer projects. It will have a custom TTL logic graphics card that will be able to display 320x200 in 256 colours over VGA. If possible, there will be a high res mode, at 640x400 in 4 shades of grey. There will be 64k of double-buffered VRAM, interfaced through a DMA chip on the card.
+- The graphics system will be more advanced than most homebrew computer projects. It will have a custom TTL logic graphics card that will be able to display 320x200 in 256 colours over VGA. If possible, there will be a high res mode, at 640x400 in 4 shades of grey. There will be 64k of double-buffered VRAM, interfaced via commands. These commands will include aan auto-change funcion, allowing entire images to be copied with ease. It will also have a text mode, utilizing bitmap copy from the character ROM.
 
 ### Todo:
 
