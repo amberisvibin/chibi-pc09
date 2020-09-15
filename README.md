@@ -1,5 +1,5 @@
 # chibi pc-09
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/amberisvibin/chibi-pc80) ![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc80)
+![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc80) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
 ### Description:
 The pc-09 will be a Motorola 6809 based microcomputer with an advanced MMU, boot scheme, and graphics hardware:
@@ -20,7 +20,7 @@ The pc-09 will be a Motorola 6809 based microcomputer with an advanced MMU, boot
 
 - The kernel will implement drivers, using position-independent, re-entrant code. In theory, these drivers should be interchangeable with any 6809 system.
 
-### Todo:
+## Todo:
 
 - Design mainboard
 
@@ -29,3 +29,6 @@ The pc-09 will be a Motorola 6809 based microcomputer with an advanced MMU, boot
 - Program ROM
 
 - Write kernel/OS
+
+## Code of Conduct
+This project uses the [Contributor Covenant](CODE_OF_CONDUCT.md). While a code of conduct is not *strictly* neccesary at this stage, any form of discrimination will **not** be tolerated. Thank you for understanding.
