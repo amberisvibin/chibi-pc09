@@ -1,5 +1,5 @@
 # chibi pc-80
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/amberisvibin/chibi-pc80)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/amberisvibin/chibi-pc80) ![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc80)
 
 ### Description:
 The pc-80 will be a Z80-based microcomputer with an advanced I/O system, boot scheme, and graphics hardware:
