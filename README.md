@@ -28,7 +28,7 @@ The pc-09 will be a Motorola 6809 based microcomputer with an advanced MMU, boot
 
 - Program ROM
 
-- Write kernel/OS
+- Write kernel/OS [NOTE: [NitrOS-9](https://sourceforge.net/projects/nitros9/) fork?]
 
 ## Code of Conduct
 This project uses the [Contributor Covenant](CODE_OF_CONDUCT.md). While a code of conduct is not *strictly* neccesary at this stage, any form of discrimination will **not** be tolerated. Thank you for understanding.
