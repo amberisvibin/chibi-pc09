@@ -1,5 +1,6 @@
 # Docs
 
-* design notes:
+* outdated_scans:
 
-  * notes for design on paper, scanned in (more scanning to be done) (to be typed up and organized)
+  * notes for design on paper, scanned in. mostly outdated. more handwritten notes exist that have not been scanned.
+
