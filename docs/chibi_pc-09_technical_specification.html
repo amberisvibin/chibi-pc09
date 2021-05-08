@@ -55,7 +55,7 @@
 <tbody>
 <tr>
 <td>0000 - 07FF</td>
-<td>First Kernel Block</td>
+<td>Kernal Root Block</td>
 </tr>
 <tr>
 <td>0800 - EFFE</td>
@@ -67,7 +67,7 @@
 </tr>
 <tr>
 <td>F7FF - FFFF</td>
-<td>Reset Vectors</td>
+<td>Vector Block</td>
 </tr>
 </tbody>
 </table>
@@ -93,7 +93,22 @@
 </tbody>
 </table>
 <h2 id="expansion-card-description">Expansion Card Description</h2>
-<p>Byte 0 of every card should contain a &#39;type&#39; descriptor.</p>
+<p>Byte 0 of every card should contain a descriptor. The structure of the descriptor is described in the following table.</p>
+<table>
+<thead>
+<tr>
+<th>Bits</th>
+<th>Descriptor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0-2</td>
+<td>Type</td>
+</tr>
+</tbody>
+</table>
+<h3 id="type-descriptor-table">Type Descriptor Table</h3>
 <table>
 <thead>
 <tr>
@@ -104,19 +119,29 @@
 </thead>
 <tbody>
 <tr>
-<td>00</td>
+<td>000</td>
 <td>Block Storage</td>
 <td>SD Card</td>
 </tr>
 <tr>
-<td>01</td>
+<td>001</td>
 <td>ANSI I/O Stream</td>
 <td>UART</td>
 </tr>
 <tr>
-<td>02</td>
+<td>010</td>
 <td>ANSI Compatible Graphics Device</td>
 <td>VGA64</td>
+</tr>
+<tr>
+<td>011</td>
+<td>Input Device</td>
+<td>Keyboard</td>
+</tr>
+<tr>
+<td>1xx</td>
+<td>Other</td>
+<td>Other</td>
 </tr>
 </tbody>
 </table>

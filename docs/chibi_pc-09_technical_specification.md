@@ -20,10 +20,10 @@
 
 | Address Range | Description            |
 | ------------- | ---------------------- |
-| 0000 - 07FF   | First Kernel Block     |
+| 0000 - 07FF   | Kernal Root Block      |
 | 0800 - EFFE   | Standard Memory Blocks |
 | EFFF - F7FE   | I/O Block              |
-| F7FF - FFFF   | Reset Vectors          |
+| F7FF - FFFF   | Vector Block           |
 
 ## I/O Block Description
 
@@ -38,10 +38,18 @@
 
 ## Expansion Card Description
 
-Byte 0 of every card should contain a 'type' descriptor.
+Byte 0 of every card should contain a descriptor. The structure of the descriptor is described in the following table.
 
-| Type Descriptor | Description                     | Example |
-| --------------- | ------------------------------- | ------- |
-| 00              | Block Storage                   | SD Card |
-| 01              | ANSI I/O Stream                 | UART    |
-| 02              | ANSI Compatible Graphics Device | VGA64   |
+| Bits | Descriptor |
+| ---- | ---------- |
+| 0-2  | Type       |
+
+### Type Descriptor Table
+
+| Type Descriptor | Description                     | Example  |
+| --------------- | ------------------------------- | -------- |
+| 000             | Block Storage                   | SD Card  |
+| 001             | ANSI I/O Stream                 | UART     |
+| 010             | ANSI Compatible Graphics Device | VGA64    |
+| 011             | Input Device                    | Keyboard |
+| 1xx             | Other                           | Other    |
