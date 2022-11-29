@@ -1,6 +1,8 @@
 # chibi pc-09
 ![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc80) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
+![OS9 Mockup](sprite/320x200_os9_mockup-logo_rainbow_2x.png)
+
 ## Description:
 The pc-09 will be an extremely expandable Motorola 6809 based microcomputer that can run OS-9 of off an SD card:
 
