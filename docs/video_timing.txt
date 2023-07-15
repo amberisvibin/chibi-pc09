@@ -1,0 +1,53 @@
+5MHZ IS VALID
+128.0 K VRAM, up to  524280  pixels.
+Pixel Clock (Mhz) > 25.175
+Signal Clock (Mhz) > 5
+Horizontal Resolution > 640
+Vertical Resolution > 480
+Horzontal Front Porch:  6
+Horzontal Sync:         8
+Horzontal Back Porch:   5
+
+Vertical Front Porch:  10
+Vertical Sync:         4
+Vertical Back Porch:   18
+
+Expected exact frequency:  59.15 Hz
+Image pixel count:  307200  of maximum  524280
+Words per line:  160
+
+8MHZ IS VALID
+80.0 K VRAM, up to  327680  pixels.
+Pixel Clock (Mhz) > 25.175
+Signal Clock (Mhz) > 8
+Horizontal Resolution > 640
+Vertical Resolution > 480
+Horzontal Front Porch:  11
+Horzontal Sync:         13
+Horzontal Back Porch:   7
+
+Vertical Front Porch:  10
+Vertical Sync:         4
+Vertical Back Porch:   18
+
+Expected exact frequency:  58.88 Hz
+Image pixel count:  307200  of maximum  327680
+Words per line:  160
+
+800X600
+128.0 K VRAM, up to  524288  pixels.
+Pixel Clock (Mhz) > 40
+Signal Clock (Mhz) > 8
+Horizontal Resolution > 800
+Vertical Resolution > 600
+Horzontal Front Porch:  8
+Horzontal Sync:         13
+Horzontal Back Porch:   7
+
+Vertical Front Porch:  10
+Vertical Sync:         4
+Vertical Back Porch:   18
+
+Expected exact frequency:  58.6 Hz
+Image pixel count:  480000  of maximum  524288
+Words per line:  200
