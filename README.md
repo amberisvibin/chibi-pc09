@@ -1,5 +1,5 @@
 # chibi pc-09
-![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc80) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
+![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc80)
 
 ![OS9 Mockup](sprite/320x200_os9_mockup-logo_rainbow_2x.png)
 
