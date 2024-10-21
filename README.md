@@ -3,6 +3,8 @@
 
 ![OS9 Mockup](sprite/320x200_os9_mockup-logo_rainbow_2x.png)
 
+## This document is no longer accurate and will be updated in the future.
+
 ## Description:
 The pc-09 will be an extremely expandable Motorola 6809 based microcomputer that can run OS-9 of off an SD card:
 
