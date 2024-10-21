@@ -21,6 +21,3 @@ The pc-09 will be an extremely expandable Motorola 6809 based microcomputer that
 ## Progress
 
 Currently there isn't a lot to see here. I am in the process of getting everything from my head onto paper.
-
-## Code of Conduct
-This project uses the [Contributor Covenant](CODE_OF_CONDUCT.md). While a code of conduct is not strictly neccesary at this stage, any form of discrimination will not be tolerated. Thank you for understanding.
