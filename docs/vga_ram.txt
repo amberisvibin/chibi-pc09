@@ -1,0 +1,27 @@
+max 256k for upd7220
+mak 2mb for upd72020
+800x600 is *barely* possible with
+32k sram is the largest available in dip with the speed neccesary
+blanking area *may* be possible on chip. if not the chip produces the neccesary signals. some external logic
+800x600 requires dividing pixel clk by 5 to get 8mhz signal clk
+this all assumes 4 bit using memory pages
+
+128k + 32k = 160k
+5x 32k sram - a lot of ram
+160k is enough for 4 bit color at 640x480
+160k is enough for 2 bit color at 800x600
+simplest to implement, both are standard vga resolutions
+
+32k + 8k = 40k
+1x 32k sram + 1x 8k sram - two diff chips
+40k is enough for 1 bit color at 640x480
+40k is enough for 4 bit color at 320x240 or 320x200
+needs linedoubling for 320x240
+needs linedoubling and blank area for 320x200
+
+32k
+1x 32k sram - simplest, 1 chip
+32k is enough for 1 bit color at 640x400
+32k is enough for 4 bit color at 320x200
+needs blank area for 640x400
+needs linedoubling and blank area for 320x200
