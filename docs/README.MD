@@ -1,8 +1,10 @@
 # Docs
 
-## This information is outdated and will be updated in the future.
+File descriptions:
 
-* outdated_scans:
-
-  * notes for design on paper, scanned in. mostly outdated. more handwritten notes exist that have not been scanned.
-
+- links.txt contains useful links i would like to keep
+- 6809-sn74ls612_timing.md contains notes on the mmu and cpu interface
+- tech-spec.md contains basic info on layout of system (outdated)
+- timing.html contains info on vga timing pulled from https://martin.hinner.info/vga/timing.html
+- vga_ram.txt contains notes on ram size for the vga card
+- video_timing.txt contains output from the python script linked in the first entry of links.txt. it has some timing settings for the upd72020 for different resolutions
