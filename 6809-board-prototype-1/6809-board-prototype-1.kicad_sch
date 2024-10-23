@@ -3956,6 +3956,193 @@
 				)
 			)
 		)
+		(symbol "Switch:SW_Push_SPDT"
+			(pin_names
+				(offset 0) hide)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "SW"
+				(at 0 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "SW_Push_SPDT"
+				(at 0 -5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Momentary Switch, single pole double throw"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "switch single-pole double-throw spdt ON-ON"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "SW_Push_SPDT_0_0"
+				(circle
+					(center -2.032 0)
+					(radius 0.508)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 1.016) (xy 0 3.048)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 2.032 -2.54)
+					(radius 0.508)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SW_Push_SPDT_0_1"
+				(polyline
+					(pts
+						(xy -1.524 0.2032) (xy 2.3368 1.9812)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 2.032 2.54)
+					(radius 0.508)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SW_Push_SPDT_1_1"
+				(rectangle
+					(start -3.175 3.81)
+					(end 3.175 -3.81)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin passive line
+					(at 5.08 2.54 180)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 -2.54 180)
+					(length 2.54)
+					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "power:+5V"
 			(power)
 			(pin_numbers hide)
@@ -4294,6 +4481,12 @@
 		(uuid "4d00dcb8-bd51-453a-b9a4-110654074c84")
 	)
 	(junction
+		(at 171.45 24.13)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "693c9249-39b1-4aaf-91f2-174f0a0ddf02")
+	)
+	(junction
 		(at 22.86 124.46)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4310,12 +4503,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "b09de3b5-21a8-41bf-99fe-b24616bb35b1")
-	)
-	(junction
-		(at 29.21 71.12)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b70648ea-b116-4e50-aec4-5bd66136c253")
 	)
 	(junction
 		(at 50.8 43.18)
@@ -5374,6 +5561,16 @@
 	)
 	(wire
 		(pts
+			(xy 262.89 24.13) (xy 262.89 27.94)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1d7c3048-3893-492f-b0c2-0b1e431d740c")
+	)
+	(wire
+		(pts
 			(xy 246.38 146.05) (xy 246.38 147.32)
 		)
 		(stroke
@@ -5584,7 +5781,7 @@
 	)
 	(wire
 		(pts
-			(xy 29.21 24.13) (xy 29.21 71.12)
+			(xy 29.21 24.13) (xy 29.21 82.55)
 		)
 		(stroke
 			(width 0)
@@ -6072,16 +6269,6 @@
 		)
 		(uuid "6246b196-b39e-49fb-b9ca-4d81bb7d3126")
 	)
-	(wire
-		(pts
-			(xy 24.13 71.12) (xy 29.21 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "62cf2839-4a70-45a1-85bd-19206913de74")
-	)
 	(bus
 		(pts
 			(xy 78.74 62.23) (xy 78.74 64.77)
@@ -6211,6 +6398,16 @@
 			(type default)
 		)
 		(uuid "6e7cb5b4-a49d-4845-8dbe-31fc98eeb0ad")
+	)
+	(wire
+		(pts
+			(xy 273.05 25.4) (xy 278.13 25.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "72df1069-eda4-4a75-8fc6-2319a9b74d8c")
 	)
 	(wire
 		(pts
@@ -6381,6 +6578,16 @@
 			(type default)
 		)
 		(uuid "802aa74f-89d0-4eb9-b16b-2a5d7fb72380")
+	)
+	(wire
+		(pts
+			(xy 273.05 30.48) (xy 278.13 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "80a873c2-9881-477e-92ef-fb62da34f4a2")
 	)
 	(bus
 		(pts
@@ -6601,6 +6808,16 @@
 			(type default)
 		)
 		(uuid "9849ed85-188e-48fa-b898-9481bf058cc1")
+	)
+	(wire
+		(pts
+			(xy 278.13 30.48) (xy 278.13 33.02)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9873053f-83e3-4406-8bc9-0954e0a49006")
 	)
 	(wire
 		(pts
@@ -7504,6 +7721,16 @@
 	)
 	(wire
 		(pts
+			(xy 278.13 25.4) (xy 278.13 22.86)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eb0165e1-72cb-4d73-bcee-0d23756db9f7")
+	)
+	(wire
+		(pts
 			(xy 264.16 146.05) (xy 264.16 156.21)
 		)
 		(stroke
@@ -7554,16 +7781,6 @@
 	)
 	(wire
 		(pts
-			(xy 29.21 71.12) (xy 29.21 82.55)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ef9088cf-7ed5-46d8-9960-66a03679810d")
-	)
-	(wire
-		(pts
 			(xy 68.58 67.31) (xy 63.5 67.31)
 		)
 		(stroke
@@ -7571,6 +7788,16 @@
 			(type default)
 		)
 		(uuid "f07a5629-5119-4d35-8076-3d5360d76359")
+	)
+	(wire
+		(pts
+			(xy 171.45 24.13) (xy 262.89 24.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f3eb64db-c5ed-447b-9f8b-c344a5c9b634")
 	)
 	(wire
 		(pts
@@ -7751,6 +7978,16 @@
 			)
 		)
 		(uuid "46b9a4fe-bc02-4479-b264-6851ce8589bf")
+	)
+	(text "MANUAL RESET SWITCH"
+		(exclude_from_sim no)
+		(at 262.89 35.56 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7e24e6b8-262d-423a-ad63-cdcc1c1b6a86")
 	)
 	(text "6809 Board Prototype 1"
 		(exclude_from_sim no)
@@ -8541,6 +8778,17 @@
 		)
 		(uuid "c1c7d3ef-af90-43e8-97ac-6c0924083134")
 	)
+	(label "!RESET"
+		(at 29.21 82.55 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c4395150-0ae3-4c8c-b7da-576c74f03a68")
+	)
 	(label "D4"
 		(at 158.75 69.85 0)
 		(fields_autoplaced yes)
@@ -8727,28 +8975,6 @@
 			(justify right bottom)
 		)
 		(uuid "fcfaf7c4-acac-4790-bcbf-613be617cec3")
-	)
-	(global_label "{slash}RESET"
-		(shape input)
-		(at 24.13 71.12 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a309e2fd-940d-42ff-9a38-24f98bb1fedb")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 34.1908 71.12 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -10037,6 +10263,73 @@
 				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
 					(reference "U5")
 					(unit 4)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GNDREF")
+		(at 278.13 33.02 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "678633b5-ee6c-4084-aa33-e1b824bee0c2")
+		(property "Reference" "#PWR026"
+			(at 278.13 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 278.13 38.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 278.13 33.02 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 278.13 33.02 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GNDREF\" , reference supply ground"
+			(at 278.13 33.02 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3d8a1e9c-31ae-41ab-b708-146c571c0d51")
+		)
+		(instances
+			(project "6809-board-prototype-1"
+				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
+					(reference "#PWR026")
+					(unit 1)
 				)
 			)
 		)
@@ -12342,6 +12635,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+5V")
+		(at 278.13 22.86 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e24ee181-5e04-4883-b6fe-475fe7b0488e")
+		(property "Reference" "#PWR025"
+			(at 278.13 26.67 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 278.13 17.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 278.13 22.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 278.13 22.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 278.13 22.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "581be845-522b-4fb1-a4b3-b0b318c1d927")
+		)
+		(instances
+			(project "6809-board-prototype-1"
+				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
+					(reference "#PWR025")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 33.02 129.54 0)
 		(unit 1)
@@ -12664,6 +13023,77 @@
 			(project "6809-board-prototype-1"
 				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
 					(reference "X4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Switch:SW_Push_SPDT")
+		(at 267.97 27.94 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f2138743-7490-49aa-83b2-2515e66b8edb")
+		(property "Reference" "SW1"
+			(at 267.97 19.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Reset"
+			(at 267.97 21.59 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 267.97 27.94 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 267.97 27.94 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Momentary Switch, single pole double throw"
+			(at 267.97 27.94 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "0572b283-135e-43ba-932c-405e18d2151e")
+		)
+		(pin "1"
+			(uuid "9905954f-ddcd-4b40-8340-483a9c3ab099")
+		)
+		(pin "3"
+			(uuid "60b193ff-dca4-46fb-92e2-f654509ec2c9")
+		)
+		(instances
+			(project ""
+				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
+					(reference "SW1")
 					(unit 1)
 				)
 			)
