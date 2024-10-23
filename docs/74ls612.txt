@@ -1,0 +1,6 @@
+TTL devices can handle CMOS input. HD6309 -> 74LS612
+CMOS devices may or may not handle TTL input. 74LS612 -> peripherals
+
+62256 SRAM, 28C256 EEPROM, 16550 UART all handle TTL input.
+82C42 lists it's outputs as TTL compatible, but says nothing for inputs.
+Must ensure all peripherals are rated for TTL input.
