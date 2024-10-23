@@ -9,7 +9,9 @@ The MMU will allow up to 2 megabytes of I/O to be paged into the address space. 
 
 The uPD72020 is a very advanced graphics chip for it's time, capable of accelerated drawing of lines, shapes, fills, and characters. It can be coerced into outputting a VGA signal at 640x480 and *maybe* 800x600. 
 
-Prototype 1 is currently in progress. It will be a much simpler system. It will have no MMU, just the CPU, some RAM, some ROM, and a serial port.
+To avoid the infamous 65C22 bug, the system will use the 16550 UART from the PC ecosystem. It is *relatively* easy to interface this to a 6800 style bus. It has more features than a 65C22 as well. As configured, it will be stable up to 38,400 baud. 
+
+Prototype 1 is currently in progress. It will be a much simpler system. It will have no MMU, just the CPU, some RAM, some ROM, and the UART.
 
 ## Progress
 
