@@ -4,5 +4,5 @@ https://hackaday.io/project/164728/logs
 16550 to 6502
 https://www.cs.cornell.edu/~kt/post/6502-5/
 
-VT82C42 5o 65816
+VT82C42 to 65816
 http://www.baltissen.org/newhtm/65816atx.htm
