@@ -4759,6 +4759,10 @@
 		(at 260.35 114.3)
 		(uuid "ec9e245d-5956-4e4a-9c84-bb81612c0779")
 	)
+	(no_connect
+		(at 63.5 115.57)
+		(uuid "fb69eb84-c0f9-4255-be9a-f6cbb18cb39e")
+	)
 	(bus_entry
 		(at 71.12 87.63)
 		(size -2.54 2.54)
