@@ -6,3 +6,9 @@ https://www.jameco.com/z/PC16550DN-Major-Brands-Universal-Asynchronous-Receiver-
 
 Not available on Jameco: HD63C09, 28C256, uPD72020, VT82C42, 74LS612.
 eBay may be a better choice.
+
+12Mhz Passive Crystal 20pf:
+https://www.jameco.com/z/TQR49S12M0000A2040-Jameco-ValuePro-12-000MHz-HC49-Us-20pF-Crystal_325198.html
+
+1.8432 MHz Full Can Crystal Oscillator:
+https://www.jameco.com/z/MX045-3C-1M843200-JVP-Jameco-ValuePro-1-8432-MHz-Full-Can-Crystal-Oscillator_27879.html
