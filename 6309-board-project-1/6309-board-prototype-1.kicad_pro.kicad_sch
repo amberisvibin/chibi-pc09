@@ -8377,16 +8377,6 @@
 		)
 		(uuid "29a95b38-f643-49a0-b1b1-93516b26fe37")
 	)
-	(text "USE CANS FOR LOWER\nCOMPONENT COUNT? \nVERY CHEAP"
-		(exclude_from_sim no)
-		(at 179.07 139.7 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "2d199cbe-d792-46d8-937f-3770b01ca678")
-	)
 	(text "UART"
 		(exclude_from_sim no)
 		(at 215.9 55.88 0)
@@ -8417,7 +8407,7 @@
 		)
 		(uuid "7e24e6b8-262d-423a-ad63-cdcc1c1b6a86")
 	)
-	(text "6809 Board Prototype 1"
+	(text "6309 Board Prototype #1"
 		(exclude_from_sim no)
 		(at 198.882 189.992 0)
 		(effects
@@ -8427,7 +8417,7 @@
 		)
 		(uuid "cbdaf7dc-d3ed-4001-8bbb-e636f011475a")
 	)
-	(text "10/14/24\n"
+	(text "10/24/24\n"
 		(exclude_from_sim no)
 		(at 211.836 193.548 0)
 		(effects
@@ -10578,80 +10568,6 @@
 			(project "6809-board-prototype-1"
 				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
 					(reference "#PWR028")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Oscillator:CXO_DIP8")
-		(at 158.75 154.94 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "582eea3a-40e1-41ae-882d-4c16d5cfff15")
-		(property "Reference" "X3"
-			(at 168.91 148.6214 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "24MHz"
-			(at 168.91 151.1614 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Oscillator:Oscillator_DIP-8"
-			(at 170.18 163.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://cdn-reichelt.de/documents/datenblatt/B400/OSZI.pdf"
-			(at 156.21 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Crystal Clock Oscillator, DIP8-style metal package"
-			(at 158.75 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "5"
-			(uuid "b8fe37f8-e464-4ba4-ae3d-6aebc04ff91d")
-		)
-		(pin "4"
-			(uuid "3802acb9-5c3d-403c-a101-2c3c267b4988")
-		)
-		(pin "8"
-			(uuid "1e5a5f15-4efd-45d0-b668-2f4af36628b4")
-		)
-		(pin "1"
-			(uuid "0e1a3106-2dcd-4558-8917-024b75923bc3")
-		)
-		(instances
-			(project ""
-				(path "/73f02399-4449-4d3e-bf52-6d1b4c7a62b4"
-					(reference "X3")
 					(unit 1)
 				)
 			)
