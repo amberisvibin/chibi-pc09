@@ -18,3 +18,7 @@ To avoid the infamous 65C22 bug, the system will use the 16550 UART from the PC 
 I had started wiring together a board for prototyping, but it was destroyed in hurricane Helene. I am now recreating it in schematic form in order to order a PCB.
 
 Prototype 1 is currently in progress. It will be a much simpler system. It will have no MMU, just the CPU, some RAM, some ROM, and the UART.
+
+## License
+
+This project is licensed under the MIT license. This applies to both the hardware (schematics, build of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory. Files in that directory belong to their respective copyright holders.
