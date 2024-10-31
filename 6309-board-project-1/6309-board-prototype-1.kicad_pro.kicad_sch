@@ -8854,7 +8854,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "16C550"
+			(property "Value" "16550"
 				(at 2.1941 41.91 0)
 				(effects
 					(font
@@ -8873,7 +8873,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tl16c550c.pdf"
+			(property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Texas%20Instruments%20PDFs/PC16550D.pdf"
 				(at 0 0 0)
 				(effects
 					(font
@@ -8882,7 +8882,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "TL16C550, Universal Asynchronous Receiver/Transmitter with FIFOs, PDIP-40"
+			(property "Description" "PC16550D Universal Asynchronous Receiver/Transmitter With FIFOs"
 				(at 0 0 0)
 				(effects
 					(font
@@ -19994,7 +19994,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "16C550"
+		(property "Value" "16550"
 			(at 237.1441 54.61 0)
 			(effects
 				(font
@@ -20013,7 +20013,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tl16c550c.pdf"
+		(property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Texas%20Instruments%20PDFs/PC16550D.pdf"
 			(at 234.95 96.52 0)
 			(effects
 				(font
@@ -20022,7 +20022,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "TL16C550, Universal Asynchronous Receiver/Transmitter with FIFOs, PDIP-40"
+		(property "Description" "PC16550D Universal Asynchronous Receiver/Transmitter With FIFOs"
 			(at 234.95 96.52 0)
 			(effects
 				(font
