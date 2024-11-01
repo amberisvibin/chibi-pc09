@@ -10726,12 +10726,6 @@
 		(uuid "3ff01f91-00fe-4998-87ba-0fbf1017b7f8")
 	)
 	(junction
-		(at 242.57 153.67)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "40aa0b7f-92c5-4175-b844-e70c29b39b9a")
-	)
-	(junction
 		(at 195.58 116.84)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -10744,16 +10738,16 @@
 		(uuid "422b4a7a-fa69-4573-a448-db6158b56d15")
 	)
 	(junction
+		(at 240.03 146.05)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "4e20465b-22bc-4ce2-b68b-194fca6797a1")
+	)
+	(junction
 		(at 257.81 26.67)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "5a8ba5aa-83a9-409c-8c67-92f0f90603ad")
-	)
-	(junction
-		(at 242.57 146.05)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "5ac0add7-b79e-4dd9-9240-66077c9981e7")
 	)
 	(junction
 		(at 246.38 26.67)
@@ -10784,6 +10778,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "710428dd-9463-4402-bf7b-9431cf46c020")
+	)
+	(junction
+		(at 240.03 153.67)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "73403e82-89fa-4466-9bbc-6e0af266c36b")
 	)
 	(junction
 		(at 22.86 124.46)
@@ -11810,7 +11810,7 @@
 	)
 	(wire
 		(pts
-			(xy 238.76 153.67) (xy 242.57 153.67)
+			(xy 223.52 153.67) (xy 240.03 153.67)
 		)
 		(stroke
 			(width 0)
@@ -11920,7 +11920,7 @@
 	)
 	(wire
 		(pts
-			(xy 242.57 146.05) (xy 242.57 147.32)
+			(xy 240.03 146.05) (xy 240.03 147.32)
 		)
 		(stroke
 			(width 0)
@@ -12170,6 +12170,16 @@
 	)
 	(wire
 		(pts
+			(xy 240.03 153.67) (xy 248.92 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1c5ed3ca-42c0-4de2-bac8-bea1d4a23a2e")
+	)
+	(wire
+		(pts
 			(xy 185.42 129.54) (xy 209.55 129.54)
 		)
 		(stroke
@@ -12230,7 +12240,7 @@
 	)
 	(wire
 		(pts
-			(xy 242.57 152.4) (xy 242.57 153.67)
+			(xy 240.03 152.4) (xy 240.03 153.67)
 		)
 		(stroke
 			(width 0)
@@ -12750,7 +12760,7 @@
 	)
 	(wire
 		(pts
-			(xy 196.85 146.05) (xy 242.57 146.05)
+			(xy 196.85 146.05) (xy 240.03 146.05)
 		)
 		(stroke
 			(width 0)
@@ -13447,16 +13457,6 @@
 			(type default)
 		)
 		(uuid "69bfc381-146c-4d8c-a22e-ba9c37d14d21")
-	)
-	(wire
-		(pts
-			(xy 242.57 146.05) (xy 248.92 146.05)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6a292a1f-53df-44f5-a071-4635aeb9a5a3")
 	)
 	(wire
 		(pts
@@ -14298,16 +14298,6 @@
 		)
 		(uuid "a6fd54ca-12b4-49f8-aa37-f39a21f99f2b")
 	)
-	(wire
-		(pts
-			(xy 242.57 153.67) (xy 248.92 153.67)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a745c65f-b3d6-415f-8318-6adb7f0a3a8b")
-	)
 	(bus
 		(pts
 			(xy 162.56 59.69) (xy 162.56 62.23)
@@ -15060,7 +15050,7 @@
 	)
 	(wire
 		(pts
-			(xy 198.12 153.67) (xy 233.68 153.67)
+			(xy 198.12 153.67) (xy 218.44 153.67)
 		)
 		(stroke
 			(width 0)
@@ -15207,6 +15197,16 @@
 			(type default)
 		)
 		(uuid "e79f77a1-ed26-4ab6-ab92-3d944b469995")
+	)
+	(wire
+		(pts
+			(xy 240.03 146.05) (xy 248.92 146.05)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e839d6be-bb80-4868-9d85-1254da3a2ff2")
 	)
 	(wire
 		(pts
@@ -16802,7 +16802,7 @@
 	)
 	(symbol
 		(lib_id "Device:Crystal_Small")
-		(at 242.57 149.86 90)
+		(at 240.03 149.86 90)
 		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
@@ -16811,7 +16811,7 @@
 		(dnp no)
 		(uuid "0223f203-bfa1-4ca5-b180-3e4b12e77769")
 		(property "Reference" "X2"
-			(at 240.03 148.5899 90)
+			(at 237.49 148.5899 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -16820,7 +16820,7 @@
 			)
 		)
 		(property "Value" "1.8432 MHz"
-			(at 240.03 151.1299 90)
+			(at 237.49 151.1299 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -16829,7 +16829,7 @@
 			)
 		)
 		(property "Footprint" "Crystal:Crystal_HC49-U_Vertical"
-			(at 242.57 149.86 0)
+			(at 240.03 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -16838,7 +16838,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 242.57 149.86 0)
+			(at 240.03 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -16847,7 +16847,7 @@
 			)
 		)
 		(property "Description" "Two pin crystal, small symbol"
-			(at 242.57 149.86 0)
+			(at 240.03 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20592,6 +20592,7 @@
 	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 248.92 149.86 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -20599,7 +20600,7 @@
 		(dnp no)
 		(uuid "a07cfbb1-66e5-4126-9107-2b07949a456e")
 		(property "Reference" "R3"
-			(at 251.46 148.59 0)
+			(at 246.38 148.59 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20608,7 +20609,7 @@
 			)
 		)
 		(property "Value" "1M"
-			(at 251.46 151.13 0)
+			(at 246.38 151.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21418,7 +21419,7 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small_US")
-		(at 236.22 153.67 270)
+		(at 220.98 153.67 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -21426,7 +21427,7 @@
 		(dnp no)
 		(uuid "c0fcd358-d369-4af5-977c-3d015f992ce3")
 		(property "Reference" "R2"
-			(at 237.49 156.21 0)
+			(at 222.25 156.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21435,7 +21436,7 @@
 			)
 		)
 		(property "Value" "1.5k"
-			(at 234.95 156.21 0)
+			(at 219.71 156.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21444,7 +21445,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical"
-			(at 236.22 153.67 0)
+			(at 220.98 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21453,7 +21454,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 236.22 153.67 0)
+			(at 220.98 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -21462,7 +21463,7 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
-			(at 236.22 153.67 0)
+			(at 220.98 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
