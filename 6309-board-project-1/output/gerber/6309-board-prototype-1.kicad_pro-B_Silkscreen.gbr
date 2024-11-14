@@ -1,0 +1,29 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,8.0.6*%
+%TF.CreationDate,2024-11-14T10:18:59-05:00*%
+%TF.ProjectId,6309-board-prototype-1.kicad_pro,36333039-2d62-46f6-9172-642d70726f74,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Legend,Bot*%
+%TF.FilePolarity,Positive*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW 8.0.6) date 2024-11-14 10:18:59*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%ADD10C,0.254000*%
+G04 APERTURE END LIST*
+D10*
+%TO.C,SW1*%
+X111876998Y-17709999D02*
+G75*
+G02*
+X111622998Y-17709999I-127000J0D01*
+G01*
+X111622998Y-17709999D02*
+G75*
+G02*
+X111876998Y-17709999I127000J0D01*
+G01*
+%TD*%
+M02*
