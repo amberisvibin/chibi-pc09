@@ -21,4 +21,4 @@ Prototype 1 is currently in progress. It will be a much simpler system. It will 
 
 ## License
 
-This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory. Files in that directory belong to their respective copyright holders.
+This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory, or code/assist09.asm. Those files belong to their respective copyright holders.
