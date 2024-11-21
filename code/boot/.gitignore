@@ -1,0 +1,6 @@
+# Gitignore for Chibi PC-09 Firmware
+
+*.o
+*.bin
+*.s19
+map.txt
