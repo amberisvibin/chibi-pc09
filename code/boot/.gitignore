@@ -4,3 +4,4 @@
 *.bin
 *.s19
 map.txt
+build/
