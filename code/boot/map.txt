@@ -1,5 +1,0 @@
-Section: code (boot.o) load at 8000, length 0024
-Section: vectors (boot.o) load at FFF0, length 0010
-Symbol: \02code (boot.o) = 8000
-Symbol: \02vectors (boot.o) = FFF0
-Symbol: RESET (boot.o) = 10000
