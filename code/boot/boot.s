@@ -21,7 +21,7 @@ SCR = UART+7 ; Scratch Register (Not for control just spare RAM)
 
 ;  SECTION code
 
-  org $8000
+  ORG $8000
 
 RESET:
   ; UART Setup
@@ -45,7 +45,7 @@ RESET:
 ;  ENDSECTION
 
 ;  SECTION vectors
-  org $FFF0
+  ORG $FFF0
   ; Reset/Interrupt Vectors
   fdb  $0000 ; Reserved
   fdb  $0000 ; SWI3
