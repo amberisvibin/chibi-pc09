@@ -30,6 +30,7 @@ all: $(TARGET)
 	@echo ""
 
 $(TARGET): $(OBJS)
+	$(LD) -s boot.ld -o $@ $<
 
 $(OBJS): $(BUILDDIR)%.o : $(SRCDIR)%.s
 	-@mkdir -p $(BUILDDIR)
