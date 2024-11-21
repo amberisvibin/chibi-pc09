@@ -1,15 +1,15 @@
 # 6309 Board Prototype #1 Specs
 
 HD63C09 CPU @ 3MHz
-HM62256BLP-7 SRAM
-AT28C256-15 EEPROM
-ST16C550 UART @ 1.8342MHz (XO due to lack of 22pf 1.8432MHz XTALs)
+AS6C62256-55 SRAM (32KB)
+SST39SF010A-70 FLASH (32KB Used)
+PC16550 UART @ 1.8342MHz
 
 ## Memory Map
 
 | Device | Location  |
 |--------|-----------|
-| EEPROM | 8000-FFFF |
+| FLASH  | 8000-FFFF |
 | UART   | 7F00-7FFF |
 | SRAM   | 0000-7EFF |
 
@@ -17,6 +17,6 @@ ST16C550 UART @ 1.8342MHz (XO due to lack of 22pf 1.8432MHz XTALs)
 
 | A15 | A14-A9 | A8 | Chip   |
 |-----|--------|----|--------|
-| H   | x      | x  | EEPROM |
+| H   | x      | x  | FLASH  |
 | L   | x      | L  | SRAM   |
 | L   | H      | H  | UART   |
