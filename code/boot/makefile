@@ -1,4 +1,4 @@
-# Makefile for Chibi PC-09 Firmware
+# Makefile for CHIBI PC-09 Firmware
 
 .PHONY: all clean
 .IGNORE: clean
@@ -8,10 +8,10 @@
 # Project Defaults & Folders
 # ------------------------------------------------------------------------------
 
-TARGET   := boot.bin
-SRCDIR   := src/
-MAINSRC  := $(SRCDIR)boot.s
-SRCS     := $(wildcard $(SRCDIR)*.s)
+TARGET  := boot.bin
+SRCDIR  := src/
+MAINSRC := $(SRCDIR)boot.s
+SRCS    := $(wildcard $(SRCDIR)*.s)
 
 # ------------------------------------------------------------------------------
 # Toolchain Definitions
