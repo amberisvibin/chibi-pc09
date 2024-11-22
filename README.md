@@ -23,4 +23,4 @@ The PCB and parts for Prototype #1 have been ordered, and assembly will begin so
 
 ## License
 
-This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory, the books/ directory or code/assist09/assist09.asm. Those files belong to their respective copyright holders.
+This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory, the books/ directory or code/assist09/. Those files belong to their respective copyright holders.
