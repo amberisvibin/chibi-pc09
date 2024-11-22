@@ -1,23 +1,24 @@
 ; CHIBI PC-09 Prototype #1 Boot ROM
-; (Copyright (c) 2024 Amber Zeller
+; Copyright (c) 2024 Amber Zeller
+; Licensed under MIT
 
 ; UART registers
 UART EQU $7F00
 
 ; When DLAB = 0:
-BUFR EQU UART  ; TX/RX Buffer (Read for RX, Write for TX)
-IER EQU UART+1 ; Interrupt Enable Register
-IIR EQU UART+1 ; Interrupt Enable Register (Upon Read)
+BUFR EQU UART    ; TX/RX Buffer (Read for RX, Write for TX)
+IER EQU UART + 1 ; Interrupt Enable Register
+IIR EQU UART + 1 ; Interrupt Ident Register (Upon Read)
 ; When DLAB = 1
-DLL EQU UART   ; Divisor Latch (LSB)
-DLM EQU UART+1 ; Divisor Latch (MSB)
+DLL EQU UART     ; Divisor Latch (LSB)
+DLM EQU UART + 1 ; Divisor Latch (MSB)
 
-FCR EQU UART+2 ; FIFO Control Register (Upon Write)
-LCR EQU UART+3 ; Line Control Register
-MCR EQU UART+4 ; MODEM Control Register
-LSR EQU UART+5 ; Line Status Register
-MSR EQU UART+6 ; MODEM Status Register
-SCR EQU UART+7 ; Scratch Register (Not for control just spare RAM)
+FCR EQU UART + 2 ; FIFO Control Register (Upon Write)
+LCR EQU UART + 3 ; Line Control Register
+MCR EQU UART + 4 ; MODEM Control Register
+LSR EQU UART + 5 ; Line Status Register
+MSR EQU UART + 6 ; MODEM Status Register
+SCR EQU UART + 7 ; Scratch Register (Not for control just spare RAM)
 
   ORG $8000
 
