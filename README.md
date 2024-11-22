@@ -19,6 +19,8 @@ I had started wiring together a board for prototyping, but it was destroyed in h
 
 Prototype 1 is currently in progress. It will be a much simpler system. It will have no MMU, just the CPU, some RAM, some ROM, and the UART.
 
+The PCB and parts for Prototype #1 have been ordered, and assembly will begin soon. Initial test code is now available in the code/ directory.
+
 ## License
 
 This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory, the books/ directory or code/assist09/assist09.asm. Those files belong to their respective copyright holders.

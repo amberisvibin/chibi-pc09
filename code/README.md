@@ -1,13 +1,7 @@
 # Code
 
-## assist09/
+These are the sources for the boot code for Prototype #1. ASSIST09 will eventually be integrated.
 
-assist09.asm is the original motorola version, and relies on the as9 assembler found [here](http://home.hccnet.nl/a.w.m.van.der.horst/m6809.html).
+The version of ASSIST09 that is being used has been modified for asm6809 by the [MECB](https://github.com/DigicoolThings/MECB) project and is available [here](https://github.com/DigicoolThings/MECB/blob/main/MECB_6809_CPU/ASSIST09/src/ASSIST09_Original_ASM6809.asm).
 
-assemble.sh will assemble assist09.asm to an s19 file and use gnu binutils objcopy to turn that into a bin file.
-
-## boot/
-
-the boot code for prototype 1, uses the lwtools assembler.
-
-assemble.sh will assemble boot.s to an s19 file and use gnu binutils objcopy to turn that into a bin file.
+Information for building the boot code is under boot/README.md.
