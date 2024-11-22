@@ -2,28 +2,26 @@
 ; (Copyright (c) 2024 Amber Zeller
 
 ; UART registers
-UART = $7F00
+UART EQU $7F00
 
-; When DLAB = 0
-BUFR = UART  ; TX/RX Buffer (Read for RX, Write for TX)
-IER = UART+1 ; Interrupt Enable Register
-IIR = UART+1 ; Interrupt Enable Register (Upon Read)
+; When DLAB = 0:
+BUFR EQU UART  ; TX/RX Buffer (Read for RX, Write for TX)
+IER EQU UART+1 ; Interrupt Enable Register
+IIR EQU UART+1 ; Interrupt Enable Register (Upon Read)
 ; When DLAB = 1
-DLL = UART   ; Divisor Latch (LSB)
-DLM = UART+1 ; Divisor Latch (MSB)
+DLL EQU UART   ; Divisor Latch (LSB)
+DLM EQU UART+1 ; Divisor Latch (MSB)
 
-FCR = UART+2 ; FIFO Control Register (Upon Write)
-LCR = UART+3 ; Line Control Register
-MCR = UART+4 ; MODEM Control Register
-LSR = UART+5 ; Line Status Register
-MSR = UART+6 ; MODEM Status Register
-SCR = UART+7 ; Scratch Register (Not for control just spare RAM)
-
-;  SECTION code
+FCR EQU UART+2 ; FIFO Control Register (Upon Write)
+LCR EQU UART+3 ; Line Control Register
+MCR EQU UART+4 ; MODEM Control Register
+LSR EQU UART+5 ; Line Status Register
+MSR EQU UART+6 ; MODEM Status Register
+SCR EQU UART+7 ; Scratch Register (Not for control just spare RAM)
 
   ORG $8000
 
-RESET:
+RESET
   ; UART Setup
   lda %11000001 ; 8n1 serial, enable DLAB
   sta LCR
@@ -40,19 +38,15 @@ RESET:
   sta MCR
 
   lda 'H        ; send H
-  STA BUFR
+  sta BUFR
 
-;  ENDSECTION
-
-;  SECTION vectors
   ORG $FFF0
   ; Reset/Interrupt Vectors
-  fdb  $0000 ; Reserved
-  fdb  $0000 ; SWI3
-  fdb  $0000 ; SWI2
-  fdb  $0000 ; FIRQ
-  fdb  $0000 ; IRQ
-  fdb  $0000 ; SWI
-  fdb  $0000 ; NMI
-  fdb  RESET ; Reset
-;  ENDSECTION
+  fdb $0000 ; Reserved
+  fdb $0000 ; SWI3
+  fdb $0000 ; SWI2
+  fdb $0000 ; FIRQ
+  fdb $0000 ; IRQ
+  fdb $0000 ; SWI
+  fdb $0000 ; NMI
+  fdb RESET ; Reset

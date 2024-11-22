@@ -10,17 +10,14 @@
 
 TARGET   := boot.bin
 SRCDIR   := src/
-BUILDDIR := build/
+MAINSRC  := $(SRCDIR)boot.s
 SRCS     := $(wildcard $(SRCDIR)*.s)
-OBJS     := $(patsubst $(SRCDIR)%.s,$(BUILDDIR)%.o,$(SRCS))
 
 # ------------------------------------------------------------------------------
 # Toolchain Definitions
 # ------------------------------------------------------------------------------
 
-AS := lwasm
-LD := lwlink
-AR := lwar
+AS := asm6809
 
 # ------------------------------------------------------------------------------
 # Rules and Phony Targets
@@ -28,12 +25,8 @@ AR := lwar
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(LD) -s boot.ld -o $@ $<
-
-$(OBJS): $(BUILDDIR)%.o : $(SRCDIR)%.s
-	-@mkdir -p $(BUILDDIR)
-	$(AS) --obj -o $@ $<
+$(TARGET): $(SRCS)
+	$(AS) -o $(TARGET) $(MAINSRC)
 
 clean:
-	rm -rvf $(BUILDDIR) $(TARGET)
+	rm -v $(TARGET)
