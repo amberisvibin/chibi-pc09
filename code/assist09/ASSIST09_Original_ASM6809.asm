@@ -68,33 +68,33 @@ NUMFUN  EQU     11              ; NUMBER OF AVAILABLE FUNCTIONS
 * THEY ARE EQUIVALENT TO OFFSETS IN THE TABLE.
 * RELATIVE POSITIONING MUST BE MAINTAINED
 
-.AVTBL  EQU     0               ; ADDRESS OF VECTOR TABLE
-.CMDL1  EQU     2               ; FIRST COMMAND LIST
-.RSVD   EQU     4               ; RESERVED HARDWARE VECTOR
-.SWI3   EQU     6               ; SWI3 ROUTINE
-.SWI2   EQU     8               ; SWI2 ROUTINE
-.FIRQ   EQU     10              ; FIRQ ROUTINE
-.IRQ    EQU     12              ; IRQ ROUTINE
-.SWI    EQU     14              ; SWI ROUTINE
-.NMI    EQU     16              ; NMI ROUTINE
-.RESET  EQU     18              ; RESET ROUTINE
-.CION   EQU     20              ; CONSOLE ON
-.CIDTA  EQU     22              ; CONSOLE INPUT DATA
-.CIOFF  EQU     24              ; CONSOLE INPUT OFF
-.COON   EQU     26              ; CONSOLE OUTPUT ON
-.CODTA  EQU     28              ; CONSOLE OUTPUT DATA
-.COOFF  EQU     30              ; CONSOLE OUTPUT OFF
-.HSDTA  EQU     32              ; HIGH SPEED PRINTDATA
-.BSON   EQU     34              ; PUNCH/LOAD ON
-.BSDTA  EQU     36              ; PUNCH/LOAD DATA
-.BSOFF  EQU     38              ; PUNCH/LOAD OFF
-.PAUSE  EQU     40              ; TASK PAUSE ROUTINE
-.EXPAN  EQU     42              ; EXPRESSION ANALYZER
-.CMDL2  EQU     44              ; SECOND COMMAND LIST
-.ACIA   EQU     46              ; ACIA ADDRESS
-.PAD    EQU     48              ; CHARACTER PAD AND NEW LINE PAD
-.ECHO   EQU     50              ; ECHO/LOAD AND NULL BKPT FLAG
-.PTM    EQU     52              ; PTM ADDRESS
+_AVTBL  EQU     0               ; ADDRESS OF VECTOR TABLE
+_CMDL1  EQU     2               ; FIRST COMMAND LIST
+_RSVD   EQU     4               ; RESERVED HARDWARE VECTOR
+_SWI3   EQU     6               ; SWI3 ROUTINE
+_SWI2   EQU     8               ; SWI2 ROUTINE
+_FIRQ   EQU     10              ; FIRQ ROUTINE
+_IRQ    EQU     12              ; IRQ ROUTINE
+_SWI    EQU     14              ; SWI ROUTINE
+_NMI    EQU     16              ; NMI ROUTINE
+_RESET  EQU     18              ; RESET ROUTINE
+_CION   EQU     20              ; CONSOLE ON
+_CIDTA  EQU     22              ; CONSOLE INPUT DATA
+_CIOFF  EQU     24              ; CONSOLE INPUT OFF
+_COON   EQU     26              ; CONSOLE OUTPUT ON
+_CODTA  EQU     28              ; CONSOLE OUTPUT DATA
+_COOFF  EQU     30              ; CONSOLE OUTPUT OFF
+_HSDTA  EQU     32              ; HIGH SPEED PRINTDATA
+_BSON   EQU     34              ; PUNCH/LOAD ON
+_BSDTA  EQU     36              ; PUNCH/LOAD DATA
+_BSOFF  EQU     38              ; PUNCH/LOAD OFF
+_PAUSE  EQU     40              ; TASK PAUSE ROUTINE
+_EXPAN  EQU     42              ; EXPRESSION ANALYZER
+_CMDL2  EQU     44              ; SECOND COMMAND LIST
+_ACIA   EQU     46              ; ACIA ADDRESS
+_PAD    EQU     48              ; CHARACTER PAD AND NEW LINE PAD
+_ECHO   EQU     50              ; ECHO/LOAD AND NULL BKPT FLAG
+_PTM    EQU     52              ; PTM ADDRESS
 NUMVTR  EQU     52/2+1          ; NUMBER OF VECTORS
 HIVTR   EQU     52              ; HIGHEST VECTOR OFFSET
 
@@ -108,7 +108,7 @@ HIVTR   EQU     52              ; HIGHEST VECTOR OFFSET
 * DEFINED HEREIN.
 ******************************************
 WORKPG  EQU     ROMBEG+RAMOFS   ; SETUP DIRECT PAGE ADDRESS
-*       SETDP   =WORKPG         ; NOTIFY ASSEMBLER
+        SETDP   WORKPG!>8       ; NOTIFY ASSEMBLER
         ORG     WORKPG+256      ; READY PAGE DEFINITIONS
 
 * THE FOLLOWING THRU BKPTOP MUST RESIDE IN THIS ORDER
@@ -341,12 +341,12 @@ SIGNON  FCC     /ASSIST09/      ; SIGNON EYE-CATCHER
 ZMONTR  STS     <RSTACK         ; SAVE FOR BAD STACK RECOVERY
         TST     1,S             ; ? INIT CONSOLE AND SEND MSG
         BNE     ZMONT2          ; BRANCH IF NOT
-        JSR     [VECTAB+.CION,PCR] ; READY CONSOLE INPUT
-        JSR     [VECTAB+.COON,PCR] ; READY CONSOLE OUTPUT
+        JSR     [VECTAB+_CION,PCR] ; READY CONSOLE INPUT
+        JSR     [VECTAB+_COON,PCR] ; READY CONSOLE OUTPUT
         LEAX    SIGNON,PCR         ; READY SIGNON EYE-CATCHER
         SWI                     ; PERFORM
         FCB     PDATA           ; PRINT STRING
-ZMONT2  LDX     <VECTAB+.PTM    ; LOAD PTM ADDRESS
+ZMONT2  LDX     <VECTAB+_PTM    ; LOAD PTM ADDRESS
         BEQ     CMD             ; BRANCH IF NOT TO USE A PTM
         CLR     PTMTM1-PTM,X    ; SET LATCH TO CLEAR RESET
         CLR     PTMTM1+1-PTM,X  ; AND SET GATE HIGH
@@ -423,10 +423,10 @@ CMD3    LBSR   READ             ; OBTAIN NEXT CHARACTER
 * GOT COMMAND, NOW SEARCH TABLES
 CMDGOT  SUBA   #CR              ; SET ZERO IF CARRIAGE RETURN
         STA    -3,U             ; SETUP FLAG
-        LDX    <VECTAB+.CMDL1   ; START WITH FIRST CMD LIST
+        LDX    <VECTAB+_CMDL1   ; START WITH FIRST CMD LIST
 CMDSCH  LDB    ,X+              ; LOAD ENTRY LENGTH
         BPL    CMDSME           ; BRANCH IF NOT LIST END
-        LDX    <VECTAB+.CMDL2   ; NOW TO SECOND CMD LITS
+        LDX    <VECTAB+_CMDL2   ; NOW TO SECOND CMD LITS
         INCB                    ; ? TO CONTINUE TO DEFAULT LIST
         BEQ     CMDSCH          ; BRANCH IF SO
 CMDBAD  LDS     <PSTACK         ; RESTORE STACK
@@ -562,7 +562,7 @@ ZOUTHX  ADDA    #$90            ; PREPARE A-F ADJUST
         DAA                     ; ADJUST
         ADCA    #$40            ; PREPARE CHARACTER BITS
         DAA                     ; ADJUST
-SEND    JMP     [VECTAB+.CODTA,PCR] ; SEND TO OUT HANDLER
+SEND    JMP     [VECTAB+_CODTA,PCR] ; SEND TO OUT HANDLER
 
 ZOT4HS  BSR     ZOUT2H          ; CONVERT FIRST BYTE
 ZOT2HS  BSR     ZOUT2H          ; CONVERT BYTE TO HEX
@@ -588,7 +588,7 @@ ZSPACE  LDA     #'              ; LOAD BLANK
 ZVSWTH  LDA     1,S             ; LOAD REQUESTERS A
         CMPA    #HIVTR          ; ? SUB-CODE TOO HIGH
         BHI     ZOTCH3          ; IGNORE CALL IF SO
-        LDY     <VECTAB+.AVTBL  ; LOAD VECTOR TABLE ADDRESS
+        LDY     <VECTAB+_AVTBL  ; LOAD VECTOR TABLE ADDRESS
         LDU     A,Y             ; U=OLD ENTRY
         STU     4,S             ; RETURN OLD VALUE TO CALLERS X
         STX     -2,S            ; ? X=0
@@ -619,7 +619,7 @@ ZINCH   BSR     XQCIDT          ; CALL INPUT DATA APPENDAGE
         BNE     ZIN2            ; NO, TEST ECHO BYTE
         LDA     #LF             ; LOAD LINE FEED
         BSR     SEND            ; ALWAYS ECHO LINE FEED
-ZIN2    TST     <VECTAB+.ECHO   ; ? ECHO DESIRED
+ZIN2    TST     <VECTAB+_ECHO   ; ? ECHO DESIRED
         BNE     ZOTCH3          ; NO, RETURN
 * FALL THROUGH TO OUTCH
 ************************************************
@@ -718,8 +718,8 @@ CHKWT   BSR     XQPAUS          ; PAUSE FOR A MOMENT
         RTS                     ; AND RETURN
 
 * SAVE MEMORY WITH JUMPS
-XQPAUS  JMP   [VECTAB+.PAUSE,PCR] ; TO PAUSE ROUTINE
-XQCIDT  JSR   [VECTAB+.CIDTA,PCR] ; TO INPUT ROUTINE
+XQPAUS  JMP   [VECTAB+_PAUSE,PCR] ; TO PAUSE ROUTINE
+XQCIDT  JSR   [VECTAB+_CIDTA,PCR] ; TO INPUT ROUTINE
         ANDA  #$7F              ; STRIP PARITY
         RTS                     ; RETURN TO CALLER
 
@@ -821,7 +821,7 @@ FIRQR   EQU     RTI             ; IMMEDIATE RETURN
 * OUTPUT: C=0 IF NO DATA READY, C=1 A=CHARACTER
 * U VOLATILE
 
-CIDTA   LDU     <VECTAB+.ACIA   ; LOAD ACIA ADDRESS
+CIDTA   LDU     <VECTAB+_ACIA   ; LOAD ACIA ADDRESS
         LDA     ,U              ; LOAD STATUS REGISTER
         LSRA                    ; TEST RECEIVER REGISTER FLAG
         BCC     CIRTN           ; RETURN IF NOTHING
@@ -833,7 +833,7 @@ CIRTN   RTS                     ; RETURN TO CALLER
 * A,X VOLATILE
 CION   EQU      *
 COON   LDA      #3              ; RESET ACIA CODE
-       LDX      <VECTAB+.ACIA   ; LOAD ACIA ADDRESS
+       LDX      <VECTAB+_ACIA   ; LOAD ACIA ADDRESS
        STA      ,X              ; STORE INTO STATUS REGISTER
        LDA      #$51            ; SET CONTROL
        STA      ,X              ; REGISTER UP
@@ -849,14 +849,14 @@ COOFF EQU       RTS             ; CONSOLE OUTPUT OFF
 * ALL REGISTERS TRANSPARENT
 
 CODTA   PSHS    U,D,CC          ; SAVE REGISTERS,WORK BYTE
-        LDU     <VECTAB+.ACIA   ; ADDRESS ACIA
+        LDU     <VECTAB+_ACIA   ; ADDRESS ACIA
         BSR     CODTAO          ; CALL OUTPUT CHAR SUBROUTINE
         CMPA    #DLE            ; ? DATA LINE ESCAPE
         BEQ     CODTRT          ; YES, RETURN
-        LDB     <VECTAB+.PAD    ; DEFAULT TO CHAR PAD COUNT
+        LDB     <VECTAB+_PAD    ; DEFAULT TO CHAR PAD COUNT
         CMPA    #CR             ; ? CR
         BNE     CODTPD          ; BRANCH NO
-        LDB     <VECTAB+.PAD+1  ; LOAD NEW LINE PAD COUNT
+        LDB     <VECTAB+_PAD+1  ; LOAD NEW LINE PAD COUNT
 CODTPD  CLRA                    ; CREATE NULL
         STB     ,S              ; SAVE COUNT
         FCB     SKIP2           ; ENTER LOOP
@@ -866,10 +866,10 @@ CODTLP  BSR     CODTAO          ; SEND NULL
 CODTRT  PULS    PC,U,D,CC       ; RESTORE REGISTERS AND RETURN
 
 CODTAD  LBSR    XQPAUS          ; TEMPORARY GIVE UP CONTROL
-CODTAO  LDB     1,U             ; LOAD ACIA CONTROL REGISTER
-        BITB    #$02            ; ? TX REGISTER CLEAR >LSAB FIXME
-        BNE     CODTAD          ; RELEASE CONTROL IF NOT
-        STA     ,U              ; STORE INTO DATA REGISTER
+CODTAO  LDB     ,U              ; LOAD ACIA CONTROL REGISTER
+        BITB    #$02            ; ? TX REGISTER CLEAR
+        BEQ     CODTAD          ; RELEASE CONTROL IF NOT
+        STA     1,U             ; STORE INTO DATA REGISTER
         RTS                     ; RETURN TO CALLER
 *E
 
@@ -975,15 +975,15 @@ BYTHEX  SWI                    ; GET NEXT HEX
 *                  S+1=FRAME COUNT/CHECKSUM
 *                  S+0=BYTE COUNT
 
-BSDPUN  LDU     <VECTAB+.PAD    ; LOAD PADDING VALUES
+BSDPUN  LDU     <VECTAB+_PAD    ; LOAD PADDING VALUES
         LDX     4,S             ; X=FROM ADDRESS
         PSHS    U,X,D           ; CREATE STACK WORK AREA
         LDD     #24             ; SET A=0, B=24
-        STB     <VECTAB+.PAD    ; SETUP 24 CHARACTER PADS
+        STB     <VECTAB+_PAD    ; SETUP 24 CHARACTER PADS
         SWI                     ; SEND NULLS OUT
         FCB     OUTCH           ; FUNCTION
         LDB     #4              ; SETUP NEW LINE PAD TO 4
-        STD     <VECTAB+.PAD    ; SETUP PUNCH PADDING
+        STD     <VECTAB+_PAD    ; SETUP PUNCH PADDING
 * CALCULATE SIZE
 BSPGO   LDD     8,S             ; LOAD TO
         SUBD    2,S             ; MINUS FROM=LENGTH
@@ -1024,14 +1024,14 @@ BSPMRE BSR      BSPUN2          ; SEND OUT NEXT BYTE
        SWI                      ; SEND OUT STRING
        FCB      PDATA           ; FUNCTION
        LDD      4,S             ; RECOVER PAD COUNTS
-       STD      <VECTAB+.PAD    ; RESTORE
+       STD      <VECTAB+_PAD    ; RESTORE
        CLRA                     ; SET Z=1 FOR OK RETURN
        PULS     PC,U,X,D        ; RETURN WITH OK CODE
 BSPUN2 ADDB     ,X              ; ADD TO CHECKSUM
 BSPUNC LBRA     ZOUT2H          ; SEND OUT AS HEX AND RETURN
 
-BSPSTR FCB      'S,'1,EOT       ; CR,LF,NULLS,S,1
-BSPEOF FCC      /S9030000FC/    ; EOF STRING
+BSPSTR FCB      'S,'1,EOT        ; CR,LF,NULLS,S,1
+BSPEOF FCC      /S9030000FC/         ; EOF STRING
        FCB      CR,LF,EOT
 
 * HSDTA - HIGH SPEED PRINT MEMORY
@@ -1084,7 +1084,7 @@ HSHCOK  SWI                     ; SEND CHARACTER
         FCB     OUTCH           ; FUNCTION
         DECB                    ; ? DONE
         BNE     HSHCHR          ; BRANCH NO
-        CPX     2,S             ; ? PAST LAST ADDRESS
+        CMPX    2,S             ; ? PAST LAST ADDRESS
         BHS     HSDRTN          ; QUIT IF SO
         STX     4,S             ; UPDATE FROM ADDRESS
         LDA     5,S             ; LOAD LOW BYTE ADDRESS
@@ -1224,7 +1224,7 @@ BLDNNB  CLRA                    ; NO DYNAMIC DELIMITER
 * BUILD WITH LEADING BLANKS
 BLDNUM  LDA     #'              ; ALLOW LEADING BLANKS
         STA     <DELIM          ; STORE AS DELIMITER
-        JMP     [VECTAB+.EXPAN,PCR]   ; TO EXP ANALYZER
+        JMP     [VECTAB+_EXPAN,PCR]   ; TO EXP ANALYZER
 * THIS IS THE DEFAULT SINGLE ROM ANALYZER. WE ACCEPT:
 * 1) HEX INPUT
 * 2) 'M' FOR LAST MEMORY EXAMINE ADDRESS
@@ -1491,7 +1491,7 @@ CDISPS  PSHS    Y,X             ; SETUP PARAMETERS FOR HSDATA
         CMPD    2,S             ; ? WAS IT COUNT
         BLS     CDCNT           ; BRANCH YES
         STD     ,S              ; STORE HIGH ADDRESS
-CDCNT   JSR     [VECTAB+.HSDTA,PCR] ; CALL PRINT ROUTINE
+CDCNT   JSR     [VECTAB+_HSDTA,PCR] ; CALL PRINT ROUTINE
         PULS    PC,U,Y          ; CLEAN STACK AND END COMMAND
 
 * OBTAIN NUMBER - ABORT IF NONE
@@ -1513,10 +1513,10 @@ CPUNCH  BSR     CDNUM           ; OBTAIN START ADDRESS
         BSR     CDNUM           ; OBTAIN END ADDRESS
         CLR     ,-S             ; SETUP PUNCH FUNCTION CODE
         PSHS    Y,D             ; STORE VALUES ON STACK
-CCALBS  JSR     [VECTAB+.BSON,PCR] ; INITIALIZE HANDLER
-        JSR     [VECTAB+.BSDTA,PCR] ; PERFORM FUNCTION
+CCALBS  JSR     [VECTAB+_BSON,PCR] ; INITIALIZE HANDLER
+        JSR     [VECTAB+_BSDTA,PCR] ; PERFORM FUNCTION
         PSHS    CC              ; SAVE RETURN CODE
-        JSR     [VECTAB+.BSOFF,PCR] ; TURN OFF HANDLER
+        JSR     [VECTAB+_BSOFF,PCR] ; TURN OFF HANDLER
         PULS    CC              ; OBTAIN CONDITION CODE SAVED
         BNE     CDBADN          ; BRANCH IF ERROR
         PULS    PC,Y,X,A        ; RETURN FROM COMMAND
@@ -1546,14 +1546,14 @@ CTRACE  BSR     CDNUM           ; OBTAIN TRACE COUNT
 CDOT    LEAS    2,S             ; RID COMMAND RETURN FROM STACK
 CTRCE3  LDU     [10,S]          ; LOAD OPCODE TO EXECUTE
         STU     <LASTOP         ; STORE FOR TRACE INTERRUPT
-        LDU     <VECTAB+.PTM    ; LOAD PTM ADDRESS
+        LDU     <VECTAB+_PTM    ; LOAD PTM ADDRESS
         LDD     #$0701          ; 7,1 CYCLES DOWN+CYCLES UP
         STD     PTMTM1-PTM,U    ; START NMI TIMEOUT
         RTI                     ; RETURN FOR ONE INSTRUCTION
 
 *************NULLS  -  SET NEW LINE AND CHAR PADDING
 CNULLS  BSR     CDNUM           ; OBTAIN NEW LINE PAD
-        STD     <VECTAB+.PAD    ; RESET VALUES
+        STD     <VECTAB+_PAD    ; RESET VALUES
         RTS                     ; END COMMAND
 
 ******************STLEVEL - SET STACK TRACE LEVEL
@@ -1713,13 +1713,13 @@ CONV2
 ****************************************************
 *            DEFAULT INTERRUPT TRANSFERS           *
 ****************************************************
-RSRVD   JMP     [VECTAB+.RSVD,PCR]      ; RESERVED VECTOR
-SWI3    JMP     [VECTAB+.SWI3,PCR]      ; SWI3 VECTOR
-SWI2    JMP     [VECTAB+.SWI2,PCR]      ; SWI2 VECTOR
-FIRQ    JMP     [VECTAB+.FIRQ,PCR]      ; FIRQ VECTOR
-IRQ     JMP     [VECTAB+.IRQ,PCR]       ; IRQ VECTOR
-SWI     JMP     [VECTAB+.SWI,PCR]       ; SWI VECTOR
-NMI     JMP     [VECTAB+.NMI,PCR]       ; NMI VECTOR
+RSRVD   JMP     [VECTAB+_RSVD,PCR]      ; RESERVED VECTOR
+SWI3    JMP     [VECTAB+_SWI3,PCR]      ; SWI3 VECTOR
+SWI2    JMP     [VECTAB+_SWI2,PCR]      ; SWI2 VECTOR
+FIRQ    JMP     [VECTAB+_FIRQ,PCR]      ; FIRQ VECTOR
+IRQ     JMP     [VECTAB+_IRQ,PCR]       ; IRQ VECTOR
+SWI     JMP     [VECTAB+_SWI,PCR]       ; SWI VECTOR
+NMI     JMP     [VECTAB+_NMI,PCR]       ; NMI VECTOR
 
 ******************************************************
 *            ASSIST09 HARDWARE VECTOR TABLE
