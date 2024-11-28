@@ -1,48 +1,49 @@
-; CHIBI PC-09 Prototype #1 Boot ROM
-; Copyright (c) 2024 Amber Zeller
+; CHIBI PC-09 Prototype #1 Boot ROM -- Hardware Initialization and Reset Vecs
+; Copyright (c) 2024 Amber Zeller, Gale Faraday
 ; Licensed under MIT
 
-; UART registers
-UART EQU $7F00
+INCLUDE "hardware.inc"
 
-; When DLAB = 0:
-BUFR EQU UART    ; TX/RX Buffer (Read for RX, Write for TX)
-IER EQU UART + 1 ; Interrupt Enable Register
-IIR EQU UART + 1 ; Interrupt Ident Register (Upon Read)
-; When DLAB = 1
-DLL EQU UART     ; Divisor Latch (LSB)
-DLM EQU UART + 1 ; Divisor Latch (MSB)
-
-FCR EQU UART + 2 ; FIFO Control Register (Upon Write)
-LCR EQU UART + 3 ; Line Control Register
-MCR EQU UART + 4 ; MODEM Control Register
-LSR EQU UART + 5 ; Line Status Register
-MSR EQU UART + 6 ; MODEM Status Register
-SCR EQU UART + 7 ; Scratch Register (Not for control just spare RAM)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Hardware Initialization Routines
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ORG $8000
 
 RESET
-  ; UART Setup
   lda %11000001 ; 8n1 serial, enable DLAB
-  sta LCR
+  sta UART_LCR
 
   lda $00       ; Set divisor to 12 (9600 baud)
-  sta DLL
+  sta UART_DLL
   lda $0C
-  sta DLM
+  sta UART_DLM
 
   lda %11000000 ; 8n1 serial, disable DLAB
-  sta LCR
+  sta UART_LCR
 
   lda %01000000 ; Enable RTS
-  sta MCR
+  sta UART_MCR
 
-  lda 'H        ; send H
-  sta BUFR
+  lda 'H        ; send 'H'
+  sta UART_BUFR
+
+WAIT
+  sync          ; Wait for interrupts
+  nop
+  bra WAIT
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Interrupt and Reset Vectors
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ORG $FFF0
-  ; Reset/Interrupt Vectors
+
+VECTORS
   fdb $0000 ; Reserved
   fdb $0000 ; SWI3
   fdb $0000 ; SWI2
