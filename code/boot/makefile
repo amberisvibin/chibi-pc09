@@ -12,6 +12,7 @@ TARGET  := boot.bin
 SRCDIR  := src/
 MAINSRC := $(SRCDIR)boot.s
 SRCS    := $(wildcard $(SRCDIR)*.s)
+INCS    := $(wildcard $(SRCDIR)*.inc)
 
 # ------------------------------------------------------------------------------
 # Toolchain Definitions
@@ -25,7 +26,7 @@ AS := asm6809
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS)
+$(TARGET): $(SRCS) $(INCS)
 	$(AS) -o $(TARGET) $(MAINSRC)
 
 clean:
