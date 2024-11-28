@@ -2,7 +2,7 @@
 ; Copyright (c) 2024 Amber Zeller, Gale Faraday
 ; Licensed under MIT
 
-INCLUDE "hardware.inc"
+  INCLUDE "src/hardware.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
