@@ -10,7 +10,7 @@
 
 SRAM_BASE EQU $0000 ; SRAM Base Address
 UART_BASE EQU $7F00 ; UART Base Address
-ROM_BASE EQU $8000  ; ROM Base Address and Entry Point
+ROM_BASE  EQU $8000 ; ROM Base Address and Entry Point
 VECS_BASE EQU $FFF0 ; Vectors Base Address
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,7 +34,8 @@ UART_LSR EQU UART_BASE + 5 ; Line Status Register
 UART_MSR EQU UART_BASE + 6 ; MODEM Status Register
 UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
 
-; UART Flags
-UARTF_DLAB EQU %00000001
+; UART Flags:
+UARTF_DLAB EQU %00000001   ; Divisor Latch Access Bit
+UARTF_8N1  EQU %11000000   ; 8n1 Serial Mode
 
 ; vim: ft=asm
