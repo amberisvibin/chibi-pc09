@@ -36,3 +36,5 @@ UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
 
 ; UART Flags
 UARTF_DLAB EQU %00000001
+
+; vim: ft=asm
