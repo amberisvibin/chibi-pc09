@@ -26,7 +26,6 @@ UART_IIR EQU UART_BASE + 1 ; Interrupt Ident Register (Upon Read)
 ; When UARTF_DLAB = 1:
 UART_DLL EQU UART_BASE     ; Divisor Latch (LSB)
 UART_DLM EQU UART_BASE + 1 ; Divisor Latch (MSB)
-
 UART_FCR EQU UART_BASE + 2 ; FIFO Control Register (Upon Write)
 UART_LCR EQU UART_BASE + 3 ; Line Control Register
 UART_MCR EQU UART_BASE + 4 ; MODEM Control Register
