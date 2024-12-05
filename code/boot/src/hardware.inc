@@ -38,13 +38,19 @@ UART_LSR EQU UART_BASE + 5 ; Line Status Register
 UART_MSR EQU UART_BASE + 6 ; MODEM Status Register
 UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
 
-; TODO: Flags for FCR
-
 ; UART Flags for Interrupt Enable Register:
 UARTF_IER_ERBFI EQU %10000000 ; Enable Received Data Available Interrupt
 UARTF_IER_ETBEI EQU %01000000 ; Enable Transmitter Holding Register Empty Interrupt
 UARTF_IER_ELSI  EQU %00100000 ; Enable Receiver Line Status Interrupt
 UARTF_IER_EDSSI EQU %00010000 ; Enable MODEM Status Interrupt
+
+; UART Flags for FIFO Control Register:
+UARTF_FCR_FE   EQU %10000000 ; FIFO Enabled
+UARTF_FCR_RFR  EQU %01000000 ; RCVR FIFO Reset
+UARTF_FCR_XFR  EQU %00100000 ; XMIT FIFO Reset
+UARTF_FCR_DMS  EQU %00010000 ; DMA Mode Select
+UARTF_FCR_RTL  EQU %00000010 ; RCVR Trigger (LSB)
+UARTF_FCR_RTM  EQU %00000001 ; RCVR Trigger (MSB)
 
 ; UART Flags for Interrupt Ident Register:
 UARTF_IIR_INP  EQU %10000000 ; Reset if Interrupt Pending; 'INP' = Interrupt Not Pending
