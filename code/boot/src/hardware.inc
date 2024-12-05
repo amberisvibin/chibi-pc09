@@ -58,7 +58,7 @@ UARTF_IIR_IIDM EQU %01110000 ; Interrupt ID Mask
 UARTF_IIR_FEM  EQU %00000011 ; FIFOs Enabled Mask
 
 ; UART Flags for Line Control Register:
-UARTF_LCR_8N1  EQU %11000000 ; 8n1 Serial Mode
+UARTF_LCR_WLS  EQU %11000000 ; Word Length Select Bits
 UARTF_LCR_STB  EQU %00100000 ; Stop Bits
 UARTF_LCR_PEN  EQU %00010000 ; Parity Enable
 UARTF_LCR_EPS  EQU %00001000 ; Even Parity Select

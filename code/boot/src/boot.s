@@ -27,7 +27,7 @@ RESET
   lda #%01000000 ; Enable RTS
   sta UART_MCR
 
-  lda 'H        ; send 'H'
+  lda 'H         ; send 'H'
   sta UART_BUFR
 
 WAIT
