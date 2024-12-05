@@ -38,7 +38,7 @@ UART_LSR EQU UART_BASE + 5 ; Line Status Register
 UART_MSR EQU UART_BASE + 6 ; MODEM Status Register
 UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
 
-; TODO: Flags for IER, IIR, FCR, and MSR
+; TODO: Flags for IER, IIR, FCR
 
 ; UART Flags for Line Control Register:
 UARTF_LCR_8N1  EQU %11000000 ; 8n1 Serial Mode
@@ -65,5 +65,15 @@ UARTF_LSR_BI   EQU %00001000 ; Break Interrupt
 UARTF_LSR_THRE EQU %00000100 ; Transmitter Holding Register
 UARTF_LSR_TEMT EQU %00000010 ; Transmitter Empty
 UARTF_LSR_FIFO EQU %00000001 ; Error in RCVR FIFO
+
+; UART Flags for Modem Status Register:
+UARTF_MSR_DCTS EQU %10000000 ; Delta Clear to Send
+UARTF_MSR_DDSR EQU %01000000 ; Delta Data Set Ready
+UARTF_MSR_TERI EQU %00100000 ; Trailing Edge Ring Indicator
+UARTF_MSR_DDCD EQU %00010000 ; Delta Data Carrier Detect
+UARTF_MSR_CTS  EQU %00001000 ; Clear To Send
+UARTF_MSR_DSR  EQU %00000100 ; Data Set Ready
+UARTF_MSR_RI   EQU %00000010 ; Ring Indicator
+UARTF_MSR_DCD  EQU %00000001 ; Data Carrier Detect
 
 ; vim: ft=asm
