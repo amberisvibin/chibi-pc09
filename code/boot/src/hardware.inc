@@ -19,14 +19,18 @@ VECS_BASE EQU $FFF0 ; Vectors Base Address
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; When UARTF_DLAB = 0:
+; When UARTF_LCR_DLAB = 0:
 UART_BUFR EQU UART_BASE    ; TX/RX Buffer (Read for RX, Write for TX)
+UART_RBR EQU UART_BASE     ; RX Buffer Register
+UART_THR EQU UART_BASE     ; TX Holding Register
 UART_IER EQU UART_BASE + 1 ; Interrupt Enable Register
-UART_IIR EQU UART_BASE + 1 ; Interrupt Ident Register (Upon Read)
 
-; When UARTF_DLAB = 1:
+; When UARTF_LCR_DLAB = 1:
 UART_DLL EQU UART_BASE     ; Divisor Latch (LSB)
 UART_DLM EQU UART_BASE + 1 ; Divisor Latch (MSB)
+
+; Independent of DLAB:
+UART_IIR EQU UART_BASE + 2 ; Interrupt Ident Register (Upon Read)
 UART_FCR EQU UART_BASE + 2 ; FIFO Control Register (Upon Write)
 UART_LCR EQU UART_BASE + 3 ; Line Control Register
 UART_MCR EQU UART_BASE + 4 ; MODEM Control Register
@@ -34,8 +38,32 @@ UART_LSR EQU UART_BASE + 5 ; Line Status Register
 UART_MSR EQU UART_BASE + 6 ; MODEM Status Register
 UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
 
-; UART Flags:
-UARTF_DLAB EQU %00000001   ; Divisor Latch Access Bit
-UARTF_8N1  EQU %11000000   ; 8n1 Serial Mode
+; TODO: Flags for IER, IIR, FCR, and MSR
+
+; UART Flags for Line Control Register:
+UARTF_LCR_8N1  EQU %11000000 ; 8n1 Serial Mode
+UARTF_LCR_STB  EQU %00100000 ; Stop Bits
+UARTF_LCR_PEN  EQU %00010000 ; Parity Enable
+UARTF_LCR_EPS  EQU %00001000 ; Even Parity Select
+UARTF_LCR_SPR  EQU %00000100 ; Stick Parity
+UARTF_LCR_BRK  EQU %00000010 ; Set Break
+UARTF_LCR_DLAB EQU %00000001 ; Divisor Latch Access Bit
+
+; UART Flags for Modem Control Register:
+UARTF_MCR_DTR  EQU %10000000 ; Data Terminal Ready
+UARTF_MCR_RTS  EQU %01000000 ; Enabling Request to Send
+UARTF_MCR_OUT1 EQU %00100000 ; Out 1
+UARTF_MCR_OUT2 EQU %00010000 ; Out 2
+UARTF_MCR_LOOP EQU %00001000 ; Loop
+
+; UART Flags for Line Status Register:
+UARTF_LSR_DR   EQU %10000000 ; Data Ready
+UARTF_LSR_OE   EQU %01000000 ; Overrun Error
+UARTF_LSR_PE   EQU %00100000 ; Parity Error
+UARTF_LSR_FE   EQU %00010000 ; Framing Error
+UARTF_LSR_BI   EQU %00001000 ; Break Interrupt
+UARTF_LSR_THRE EQU %00000100 ; Transmitter Holding Register
+UARTF_LSR_TEMT EQU %00000010 ; Transmitter Empty
+UARTF_LSR_FIFO EQU %00000001 ; Error in RCVR FIFO
 
 ; vim: ft=asm
