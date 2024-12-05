@@ -38,7 +38,13 @@ UART_LSR EQU UART_BASE + 5 ; Line Status Register
 UART_MSR EQU UART_BASE + 6 ; MODEM Status Register
 UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
 
-; TODO: Flags for IER, IIR, FCR
+; TODO: Flags for IIR, FCR
+
+; UART Flags for Interrupt Enable Register:
+UARTF_IER_ERBFI EQU %10000000 ; Enable Received Data Available Interrupt
+UARTF_IER_ETBEI EQU %01000000 ; Enable Transmitter Holding Register Empty Interrupt
+UARTF_IER_ELSI  EQU %00100000 ; Enable Receiver Line Status Interrupt
+UARTF_IER_EDSSI EQU %00010000 ; Enable MODEM Status Interrupt
 
 ; UART Flags for Line Control Register:
 UARTF_LCR_8N1  EQU %11000000 ; 8n1 Serial Mode
@@ -49,7 +55,7 @@ UARTF_LCR_SPR  EQU %00000100 ; Stick Parity
 UARTF_LCR_BRK  EQU %00000010 ; Set Break
 UARTF_LCR_DLAB EQU %00000001 ; Divisor Latch Access Bit
 
-; UART Flags for Modem Control Register:
+; UART Flags for MODEM Control Register:
 UARTF_MCR_DTR  EQU %10000000 ; Data Terminal Ready
 UARTF_MCR_RTS  EQU %01000000 ; Enabling Request to Send
 UARTF_MCR_OUT1 EQU %00100000 ; Out 1
@@ -66,7 +72,7 @@ UARTF_LSR_THRE EQU %00000100 ; Transmitter Holding Register
 UARTF_LSR_TEMT EQU %00000010 ; Transmitter Empty
 UARTF_LSR_FIFO EQU %00000001 ; Error in RCVR FIFO
 
-; UART Flags for Modem Status Register:
+; UART Flags for MODEM Status Register:
 UARTF_MSR_DCTS EQU %10000000 ; Delta Clear to Send
 UARTF_MSR_DDSR EQU %01000000 ; Delta Data Set Ready
 UARTF_MSR_TERI EQU %00100000 ; Trailing Edge Ring Indicator
