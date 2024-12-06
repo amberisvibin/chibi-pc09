@@ -10,28 +10,28 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ORG $8000
+  ORG ROM_BASE
 
 RESET
-  lda %11000001 ; 8n1 serial, enable DLAB
+  lda #%11000001 ; 8n1 serial, enable DLAB
   sta UART_LCR
 
-  lda $00       ; Set divisor to 12 (9600 baud)
+  lda #$00       ; Set divisor to 12 (9600 baud)
   sta UART_DLL
-  lda $0C
+  lda #$0C
   sta UART_DLM
 
-  lda %11000000 ; 8n1 serial, disable DLAB
+  lda #%11000000 ; 8n1 serial, disable DLAB
   sta UART_LCR
 
-  lda %01000000 ; Enable RTS
+  lda #%01000000 ; Enable RTS
   sta UART_MCR
 
-  lda 'H        ; send 'H'
+  lda 'H         ; send 'H'
   sta UART_BUFR
 
 WAIT
-  sync          ; Wait for interrupts
+  sync           ; Wait for interrupts
   nop
   bra WAIT
 
@@ -41,7 +41,7 @@ WAIT
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ORG $FFF0
+  ORG VECS_BASE
 
 VECTORS
   fdb $0000 ; Reserved
