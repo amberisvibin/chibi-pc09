@@ -13,25 +13,26 @@
   ORG ROM_BASE
 
 RESET
-  lda #%11000001 ; 8n1 serial, enable DLAB
+  ; 8n1 Serial Enable DLAB
+  lda #(UARTF_LCR_WLS | UARTF_LCR_DLAB)
   sta UART_LCR
 
-  lda #$00       ; Set divisor to 12 (9600 baud)
-  sta UART_DLL
-  lda #$0C
+  ; REVIEW: Potential endianness hiccough here
+  ldd #$0C00           ; Set divisor to 12 (9600 baud)
   sta UART_DLM
+  stb UART_DLL
 
-  lda #%11000000 ; 8n1 serial, disable DLAB
+  lda #(UARTF_LCR_WLS) ; 8n1 serial, disable DLAB
   sta UART_LCR
 
-  lda #%01000000 ; Enable RTS
+  lda #(UARTF_MCR_RTS) ; Enable Request-to-Send
   sta UART_MCR
 
-  lda 'H         ; send 'H'
+  lda 'H               ; send 'H'
   sta UART_BUFR
 
 WAIT
-  sync           ; Wait for interrupts
+  sync                 ; Wait for interrupts
   nop
   bra WAIT
 
