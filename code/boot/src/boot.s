@@ -65,7 +65,7 @@ OUTSTR
   bne 1B
   stb UART_BUFR        ; Actually do our write
   bra OUTSTR           ; Reset for the next char
-2                      ; Jump point for End of routine
+2                      ; Jump point for end of routine
   rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
