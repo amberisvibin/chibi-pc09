@@ -1,5 +1,7 @@
 # chibi pc-09
-![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc09)
+
+![Gitea last commit](https://img.shields.io/gitea/last-commit/amberisvibin/chibi-pc09?gitea_url=https%3A%2F%2Fgitea.ambersplace.net&style=for-the-badge&label=Last%20Gitea%20Commit)
+![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc09?style=for-the-badge&label=Last%20Github%20Commit)
 
 ## Description
 
