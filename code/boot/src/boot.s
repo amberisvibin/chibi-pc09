@@ -68,6 +68,36 @@ OUTSTR
 2                      ; Jump point for end of routine
   rts
 
+  SECTION "Memtest"
+
+; RAM testing routine. Ported to 6809 from 6800, based on source for ROBIT-2 for
+; MIKBUG.
+RAMTEST
+  ldx #SRAM_BASE
+1                      ; Store 1 in memory
+  lda #1               ; Set [X] to 1
+  sta 0,x
+  cmpa 0,x             ; If failed print out an error indicator
+  bne 3F
+2                      ; Loop point for next address
+  asla                 ; Shift A and [X] left
+  asl 0,x
+  cmpa 0,x             ; Compare A and [X]
+  bne 3F
+  cmpa #$80            ; Only test up to $80
+  bne 2B               ; Loop if not $80
+  cmpx #$60FF          ; Compare X to end of RAM
+  beq 4F               ; Finish if we're at the end
+  leax 1,x             ; Increment X
+  bra 1B
+3                      ; Write out error indicator
+  ldb #'X
+  jsr OUTCHAR
+4                      ; Pass test
+  ldb #'P
+  jsr OUTCHAR
+  rts
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Interrupt and Reset Vectors
