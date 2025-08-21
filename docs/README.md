@@ -3,7 +3,6 @@
 File descriptions:
 
 - links.txt contains useful links i would like to keep
-- 6809-sn74ls612_timing.md contains notes on the mmu and cpu interface
 - tech-spec.md contains basic info on layout of system (outdated)
 - timing.html contains info on vga timing pulled from https://martin.hinner.info/vga/timing.html
 - vga_ram.txt contains notes on ram size for the vga card
