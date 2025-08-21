@@ -27,4 +27,4 @@ Assembly is in progress.
 
 ## License
 
-This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory, the books/ directory or code/assist09/. Those files belong to their respective copyright holders.
+This project is licensed under the MIT license. This applies to both the hardware (schematics, bill of materials, pcb layouts) and documentation. This does *not* apply to the datasheets/ directory or code/assist09/. Those files belong to their respective copyright holders.
