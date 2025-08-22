@@ -22,7 +22,7 @@ From there all you should have to do to generate a `boot.bin` is:
 
 ```sh
 git clone https://github.com/amberisvibin/chibi-pc09.git
-cd chibi-pc09
+cd chibi-pc09/code/boot
 make
 ```
 
