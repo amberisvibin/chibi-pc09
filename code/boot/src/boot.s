@@ -10,6 +10,7 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  SECTION "Reset"
   ORG ROM_BASE
 
 RESET
@@ -36,12 +37,74 @@ WAIT
   nop
   bra WAIT
 
+  SECTION "Serial"
+
+; Writes a char to the UART in non FIFO mode, preserves A.
+; @param b: char to write
+OUTCHAR
+  pshs a               ; Preserve A
+1
+  lda UART_LSR         ; if LSR.THRE == 1 then write
+  anda UARTF_LSR_THRE
+  bne 1B               ; Loop if UART not ready yet
+  stb UART_BUFR        ; Write char
+  puls a               ; Restore A
+  rts
+
+; Writes a null terminated string to the UART in non FIFO mode, clobbers A and
+; B.
+; @param x: null terminated string start address.
+OUTSTR
+  ldb x                ; Get the next value from X
+  cmpb #$00            ; Make sure that mother is non-null
+  beq 2F
+  leax 1,x             ; Increment X for our next char
+1                      ; Loop point for UART waiting
+  lda UART_LSR         ; Wait for UART to be ready
+  anda UARTF_LSR_THRE
+  bne 1B
+  stb UART_BUFR        ; Actually do our write
+  bra OUTSTR           ; Reset for the next char
+2                      ; Jump point for end of routine
+  rts
+
+  SECTION "Memtest"
+
+; RAM testing routine. Ported to 6809 from 6800, based on source for ROBIT-2 for
+; MIKBUG.
+RAMTEST
+  ldx #SRAM_BASE
+1                      ; Store 1 in memory
+  lda #1               ; Set [X] to 1
+  sta 0,x
+  cmpa 0,x             ; If failed print out an error indicator
+  bne 3F
+2                      ; Loop point for next address
+  asla                 ; Shift A and [X] left
+  asl 0,x
+  cmpa 0,x             ; Compare A and [X]
+  bne 3F
+  cmpa #$80            ; Only test up to $80
+  bne 2B               ; Loop if not $80
+  cmpx #$60FF          ; Compare X to end of RAM
+  beq 4F               ; Finish if we're at the end
+  leax 1,x             ; Increment X
+  bra 1B
+3                      ; Write out error indicator
+  ldb #'X
+  jsr OUTCHAR
+4                      ; Pass test
+  ldb #'P
+  jsr OUTCHAR
+  rts
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Interrupt and Reset Vectors
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  SECTION "Vectors"
   ORG VECS_BASE
 
 VECTORS
