@@ -2,7 +2,7 @@
 ; Copyright (c) 2024 Amber Zeller, Gale Faraday
 ; Licensed under MIT
 
-  INCLUDE "src/hardware.inc"
+  INCLUDE "hardware.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -10,12 +10,12 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  SECTION "Reset"
-  ORG ROM_BASE
+  SECTION CODE
+  ;ORG ROM_BASE
 
 RESET
   ; 8n1 Serial Enable DLAB
-  lda #(UARTF_LCR_WLS | UARTF_LCR_DLAB)
+  lda #UARTF_LCR_WLS | UARTF_LCR_DLAB
   sta UART_LCR
 
   ; REVIEW: Potential endianness hiccough here
@@ -29,7 +29,7 @@ RESET
   lda #(UARTF_MCR_RTS) ; Enable Request-to-Send
   sta UART_MCR
 
-  lda 'H               ; send 'H'
+  lda #'H               ; send 'H'
   sta UART_BUFR
 
 WAIT
@@ -37,16 +37,16 @@ WAIT
   nop
   bra WAIT
 
-  SECTION "Serial"
+  ;SECTION "Serial"
 
 ; Writes a char to the UART in non FIFO mode, preserves A.
 ; @param b: char to write
 OUTCHAR
   pshs a               ; Preserve A
-1
+NOTREADY@
   lda UART_LSR         ; if LSR.THRE == 1 then write
   anda UARTF_LSR_THRE
-  bne 1B               ; Loop if UART not ready yet
+  bne NOTREADY@        ; Loop if UART not ready yet
   stb UART_BUFR        ; Write char
   puls a               ; Restore A
   rts
@@ -55,45 +55,45 @@ OUTCHAR
 ; B.
 ; @param x: null terminated string start address.
 OUTSTR
-  ldb x                ; Get the next value from X
-  cmpb #$00            ; Make sure that mother is non-null
-  beq 2F
+  ldb 0,x              ; Get the next value from X
+  cmpb #$00            ; Make sure that we aren't at a terminator
+  beq END@
   leax 1,x             ; Increment X for our next char
-1                      ; Loop point for UART waiting
+NOTREADY@              ; Loop point for UART waiting
   lda UART_LSR         ; Wait for UART to be ready
   anda UARTF_LSR_THRE
-  bne 1B
+  bne NOTREADY@
   stb UART_BUFR        ; Actually do our write
   bra OUTSTR           ; Reset for the next char
-2                      ; Jump point for end of routine
+END@                   ; Jump point for end of routine
   rts
 
-  SECTION "Memtest"
+  ;SECTION "Memtest"
 
 ; RAM testing routine. Ported to 6809 from 6800, based on source for ROBIT-2 for
 ; MIKBUG.
 RAMTEST
   ldx #SRAM_BASE
-1                      ; Store 1 in memory
+AGAIN@                 ; Store 1 in memory
   lda #1               ; Set [X] to 1
   sta 0,x
   cmpa 0,x             ; If failed print out an error indicator
-  bne 3F
-2                      ; Loop point for next address
+  bne ERR@
+NEXT@                  ; Loop point for next address
   asla                 ; Shift A and [X] left
   asl 0,x
   cmpa 0,x             ; Compare A and [X]
-  bne 3F
+  bne ERR@
   cmpa #$80            ; Only test up to $80
-  bne 2B               ; Loop if not $80
+  bne NEXT@            ; Loop if not $80
   cmpx #$60FF          ; Compare X to end of RAM
-  beq 4F               ; Finish if we're at the end
+  beq PASS@            ; Finish if we're at the end
   leax 1,x             ; Increment X
-  bra 1B
-3                      ; Write out error indicator
+  bra AGAIN@
+ERR@                   ; Write out error indicator
   ldb #'X
   jsr OUTCHAR
-4                      ; Pass test
+PASS@                  ; Pass test
   ldb #'P
   jsr OUTCHAR
   rts
@@ -104,8 +104,8 @@ RAMTEST
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  SECTION "Vectors"
-  ORG VECS_BASE
+  SECTION VECTORS
+  ;ORG VECS_BASE
 
 VECTORS
   fdb $0000 ; Reserved

@@ -1,0 +1,3 @@
+section CODE load 8000
+
+section VECTORS high 100000
