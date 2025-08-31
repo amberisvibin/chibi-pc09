@@ -39,7 +39,7 @@ $(TARGROM): $(TARGET).s19
 
 # Link objects
 $(TARGET).s19: $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $<
+	$(LD) $(LDFLAGS) -o $@ $^
 
 # Assemble objects
 $(OBJS): $(BUILDDIR)%.o : $(SRCDIR)%.s
