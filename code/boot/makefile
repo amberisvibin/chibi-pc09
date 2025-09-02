@@ -49,4 +49,4 @@ $(OBJS): $(BUILDDIR)%.o : $(SRCDIR)%.s
 .IGNORE: clean
 clean:
 	@echo 'Cleaning up intermediary files...'
-	@rm -rv $(TARGROM) $(TARGET).s19 $(BUILDDIR)
+	@rm -rv $(TARGROM) $(TARGET).s19 map.txt $(BUILDDIR)
