@@ -1,6 +1,8 @@
 ; CHIBI PC-09 Hardware Definitions
-; Copyright (c) 2024 Amber Zeller, Gale Faraday
+; Copyright (c) 2024-2025 Amber Zeller, Gale Faraday
 ; Licensed under MIT
+
+; vim: ft=asm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -20,23 +22,23 @@ VECS_BASE EQU $FFF0 ; Vectors Base Address
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; When UARTF_LCR_DLAB = 0:
-UART_BUFR EQU UART_BASE    ; TX/RX Buffer (Read for RX, Write for TX)
-UART_RBR EQU UART_BASE     ; RX Buffer Register
-UART_THR EQU UART_BASE     ; TX Holding Register
-UART_IER EQU UART_BASE + 1 ; Interrupt Enable Register
+UART_BUFR EQU UART_BASE  ; TX/RX Buffer (Read for RX, Write for TX)
+UART_RBR EQU UART_BASE   ; RX Buffer Register
+UART_THR EQU UART_BASE   ; TX Holding Register
+UART_IER EQU UART_BASE+1 ; Interrupt Enable Register
 
 ; When UARTF_LCR_DLAB = 1:
-UART_DLL EQU UART_BASE     ; Divisor Latch (LSB)
-UART_DLM EQU UART_BASE + 1 ; Divisor Latch (MSB)
+UART_DLL EQU UART_BASE   ; Divisor Latch (LSB)
+UART_DLM EQU UART_BASE+1 ; Divisor Latch (MSB)
 
 ; Independent of DLAB:
-UART_IIR EQU UART_BASE + 2 ; Interrupt Ident Register (Upon Read)
-UART_FCR EQU UART_BASE + 2 ; FIFO Control Register (Upon Write)
-UART_LCR EQU UART_BASE + 3 ; Line Control Register
-UART_MCR EQU UART_BASE + 4 ; MODEM Control Register
-UART_LSR EQU UART_BASE + 5 ; Line Status Register
-UART_MSR EQU UART_BASE + 6 ; MODEM Status Register
-UART_SCR EQU UART_BASE + 7 ; Scratch Register (Not for control just spare RAM)
+UART_IIR EQU UART_BASE+2 ; Interrupt Ident Register (Upon Read)
+UART_FCR EQU UART_BASE+2 ; FIFO Control Register (Upon Write)
+UART_LCR EQU UART_BASE+3 ; Line Control Register
+UART_MCR EQU UART_BASE+4 ; MODEM Control Register
+UART_LSR EQU UART_BASE+5 ; Line Status Register
+UART_MSR EQU UART_BASE+6 ; MODEM Status Register
+UART_SCR EQU UART_BASE+7 ; Scratch Register (Not for control just spare RAM)
 
 ; UART Flags for Interrupt Enable Register:
 UARTF_IER_ERBFI EQU %10000000 ; Enable Received Data Available Interrupt
@@ -93,4 +95,3 @@ UARTF_MSR_DSR  EQU %00000100 ; Data Set Ready
 UARTF_MSR_RI   EQU %00000010 ; Ring Indicator
 UARTF_MSR_DCD  EQU %00000001 ; Data Carrier Detect
 
-; vim: ft=asm

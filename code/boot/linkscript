@@ -1,0 +1,5 @@
+section RESET load 8000
+section SERIAL
+section MEMTEST
+
+section VECTORS high 100000
