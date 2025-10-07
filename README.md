@@ -1,5 +1,13 @@
 # chibi pc-09
 
+## Archived!
+
+This repo has been archived, and the different parts have been migrated to other repos.
+
+The PCB for prototype 1 has been moved to https://gitea.ambersplace.net/chibi/pc09-prototype-1
+
+The firmware has been moved to https://gitea.ambersplace.net/chibi/chibi-firmware
+
 ![Gitea last commit](https://img.shields.io/gitea/last-commit/amberisvibin/chibi-pc09?gitea_url=https%3A%2F%2Fgitea.ambersplace.net&style=for-the-badge&label=Last%20Gitea%20Commit)
 ![GitHub last commit](https://img.shields.io/github/last-commit/amberisvibin/chibi-pc09?style=for-the-badge&label=Last%20Github%20Commit)
 
